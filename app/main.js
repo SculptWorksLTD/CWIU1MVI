@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, dialog, session, shell, systemPreferences, ipcMain } = require('electron');
+if (process.platform === 'darwin') app.commandLine.appendSwitch('use-mock-keychain');
 const path = require('path');
 const fs = require('fs');
 const updater = require('./updater');
