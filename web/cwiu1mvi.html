@@ -1844,34 +1844,34 @@ function recPush(_aC){if(!REC.on)return;const _aD=Math.min(_aC.length,REC.max-RE
   if(REC.n>=REC.fs*4)recFlush();
   if(REC.total>=REC.max)recRoll()}
 const CLIP={on:false,ring:[],n:0,fs:0,saved:0,max:400};
-try{CLIP.on=!!prefs().clips}catch(_aE){}
-function clipPush(_aF,_aG){CLIP.fs=Math.round(_aG);CLIP.ring.push(Float32Array.from(_aF));CLIP.n+=_aF.length;
-  const _aH=CLIP.fs*100;while(CLIP.n>_aH&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
-function clipSave(_aI,_aJ){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
+CLIP.on=false;
+function clipPush(_aE,_aF){CLIP.fs=Math.round(_aF);CLIP.ring.push(Float32Array.from(_aE));CLIP.n+=_aE.length;
+  const _aG=CLIP.fs*100;while(CLIP.n>_aG&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
+function clipSave(_aH,_aI){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
   if(!CLIP.on||REC.on||!CLIP.fs||!window.cwiuLog||!window.cwiuLog.recOpen||CLIP.saved>=CLIP.max)return "";
-  _aI=String(_aI).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
-  const _aK=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aJ))*CLIP.fs)),_aL=new Int16Array(_aK);let _aM=_aK;
-  for(let _aN=CLIP.ring.length-1;_aN>=0&&_aM>0;_aN--){const _aO=CLIP.ring[_aN];for(let _aP=_aO.length-1;_aP>=0&&_aM>0;_aP--){const _aQ=Math.max(-1,Math.min(1,_aO[_aP]));_aL[--_aM]=Math.round(_aQ*32767)}}
-  const _aR=new Uint8Array(_aL.buffer),_aS=CLIP.fs;CLIP.saved++;
-  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aI,_aS)){await window.cwiuLog.recAppend(_aR);await window.cwiuLog.recClose()}}).catch(()=>{});
-  return _aI}
-function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _aT=prefs();_aT.clips=CLIP.on;savePrefs(_aT);clipUi();
+  _aH=String(_aH).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
+  const _aJ=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aI))*CLIP.fs)),_aK=new Int16Array(_aJ);let _aL=_aJ;
+  for(let _aM=CLIP.ring.length-1;_aM>=0&&_aL>0;_aM--){const _aN=CLIP.ring[_aM];for(let _aO=_aN.length-1;_aO>=0&&_aL>0;_aO--){const _aP=Math.max(-1,Math.min(1,_aN[_aO]));_aK[--_aL]=Math.round(_aP*32767)}}
+  const _aQ=new Uint8Array(_aK.buffer),_aR=CLIP.fs;CLIP.saved++;
+  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aH,_aR)){await window.cwiuLog.recAppend(_aQ);await window.cwiuLog.recClose()}}).catch(()=>{});
+  return _aH}
+function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _aS=prefs();_aS.clips=CLIP.on;savePrefs(_aS);clipUi();
   msg(CLIP.on?T("Ritagli attivi: durante l'inseguimento salvo l'audio delle stazioni con segnale ma non lette."):T("Ritagli disattivati."))}
-function clipUi(){const _aU=$("clipBtn");if(!_aU)return;_aU.classList.toggle("live",CLIP.on);_aU.setAttribute("aria-pressed",CLIP.on?"true":"false")}
+function clipUi(){const _aT=$("clipBtn");if(!_aT)return;_aT.classList.toggle("live",CLIP.on);_aT.setAttribute("aria-pressed",CLIP.on?"true":"false")}
 function recStop(){
   if(!REC.on)return;REC.on=false;recFlush();
   $("recBtn").textContent=T("⏺ Registra");$("recBtn").classList.remove("live");
-  const _aV=REC.name,_aW=Math.max(1,Math.round(REC.total/REC.fs/60));
-  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_aX=>{if(_aX)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_aV,_aW));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
+  const _aU=REC.name,_aV=Math.max(1,Math.round(REC.total/REC.fs/60));
+  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_aW=>{if(_aW)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_aU,_aV));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
   if(typeof menuState==="function")menuState();
 }
-function splitWord(_aY){
-  let _aZ;
-  if((_aZ=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_aY)))return ["CQ",_aZ[1]];
-  if((_aZ=/^DE([A-Z0-9\/]{3,})$/.exec(_aY))&&isCall(_aZ[1]))return ["DE",_aZ[1]];
-  if((_aZ=/^([A-Z0-9\/]{3,})DE$/.exec(_aY))&&isCall(_aZ[1]))return [_aZ[1],"DE"];
-  if((_aZ=/^(TU|TNX|R)(73|5NN|599)$/.exec(_aY)))return [_aZ[1],_aZ[2]];
-  return [_aY];
+function splitWord(_aX){
+  let _aY;
+  if((_aY=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_aX)))return ["CQ",_aY[1]];
+  if((_aY=/^DE([A-Z0-9\/]{3,})$/.exec(_aX))&&isCall(_aY[1]))return ["DE",_aY[1]];
+  if((_aY=/^([A-Z0-9\/]{3,})DE$/.exec(_aX))&&isCall(_aY[1]))return [_aY[1],"DE"];
+  if((_aY=/^(TU|TNX|R)(73|5NN|599)$/.exec(_aX)))return [_aY[1],_aY[2]];
+  return [_aX];
 }
 </script>
 <script>
@@ -3935,7 +3935,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.9";
+const WEB_VERSION="1.12.10";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4016,7 +4016,7 @@ function buildViewMenu(){const _az=$("viewPop");if(!_az)return;_az.textContent="
 }
 function closeViewMenu(){$("viewPop").hidden=true;$("viewBtn").setAttribute("aria-expanded","false")}
 if(APP){$("viewBtn").parentElement.hidden=true;$("guideBtn").hidden=true}
-$("recBtn").onclick=()=>recStart();if(!window.cwiuLog)$("recBtn").hidden=true;$("clipBtn").onclick=()=>clipToggle();if(!window.cwiuLog)$("clipBtn").hidden=true;clipUi();
+$("recBtn").onclick=()=>recStart();if(!window.cwiuLog)$("recBtn").hidden=true;$("clipBtn").hidden=true;
 $("viewBtn").onclick=_aQ=>{_aQ.stopPropagation();const _aR=$("viewPop");if(!_aR.hidden){closeViewMenu();return}buildViewMenu();_aR.hidden=false;$("viewBtn").setAttribute("aria-expanded","true")};
 document.addEventListener("click",_aS=>{if(!$("viewPop").hidden&&!_aS.target.closest(".menu"))closeViewMenu()});
 document.addEventListener("keydown",_aT=>{if(_aT.key==="Escape"&&!$("viewPop").hidden)closeViewMenu()});
