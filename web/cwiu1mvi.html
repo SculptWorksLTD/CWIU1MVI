@@ -3954,7 +3954,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.13";
+const WEB_VERSION="1.12.14";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4108,175 +4108,176 @@ $("welcome").addEventListener("close",()=>{if(!updChecked){updChecked=true;setTi
 (()=>{let _bT=false;try{_bT=localStorage.getItem("cwiu-welcome-hide")==="1"}catch(_bU){}
   const _bV=/[?&]updated=1/.test(location.search);
   let _bW=null;try{_bW=JSON.parse(localStorage.getItem("cwiu-resume")||"null");localStorage.removeItem("cwiu-resume")}catch(_bX){}
-  const _bY=_bW&&Date.now()-_bW.t<120000&&(_bW.mic||_bW.cat);
-  if(_bY)setTimeout(async()=>{if(_bW.mic)await startListening(true);
-      if(_bW.cat&&catViaRigger()){try{await catViaFill();await catConnect()}catch(_bZ){}}
-      else if(_bW.cat&&navigator.serial&&navigator.serial.getPorts){try{const _ca=await navigator.serial.getPorts();let _cb=-1;try{_cb=+localStorage.getItem("cwiu-cat-port")}catch(_cc){}const _cd=_ca.length===1?_ca[0]:_ca[_cb];if(_cd)await catConnect(_cd)}catch(_ce){}}
-      if(_bW.chase)setTimeout(()=>{try{if(!chase.on)chaseStart()}catch(_cf){}},3000)},700);
+  try{if(_bW&&_bW.rb&&Date.now()-_bW.t<120000)RIGGER_BACK=_bW.rb}catch(_bY){}
+  const _bZ=_bW&&Date.now()-_bW.t<120000&&(_bW.mic||_bW.cat||_bW.rb);
+  if(_bZ)setTimeout(async()=>{if(_bW.mic)await startListening(true);
+      if(_bW.cat&&catViaRigger()){try{await catViaFill();await catConnect()}catch(_ca){}}
+      else if(_bW.cat&&navigator.serial&&navigator.serial.getPorts){try{const _cb=await navigator.serial.getPorts();let _cc=-1;try{_cc=+localStorage.getItem("cwiu-cat-port")}catch(_cd){}const _ce=_cb.length===1?_cb[0]:_cb[_cc];if(_ce)await catConnect(_ce)}catch(_cf){}}
+      if(_bW.chase)setTimeout(()=>{try{if(!chase.on)chaseStart()}catch(_cg){}},3000)},700);
   // avvio normale: tutto spento (CAT, ascolto, inseguimento) finché non si preme; parte da solo solo se lo si sceglie nelle Preferenze
-  else{const _cg=prefs();if(_cg.autoOn===true)setTimeout(async()=>{
-      try{await catViaFill()}catch(_ch){}
-      if(catViaRigger()){try{if(!rig.port)await catConnect()}catch(_ci){}}
-      else if(navigator.serial&&navigator.serial.getPorts){try{const _cj=await navigator.serial.getPorts();let _ck=-1;try{_ck=+localStorage.getItem("cwiu-cat-port")}catch(_cl){}const _cm=_cj.length===1?_cj[0]:_cj[_ck];if(_cm&&!rig.port)await catConnect(_cm)}catch(_cn){}}
+  else{const _ch=prefs();if(_ch.autoOn===true)setTimeout(async()=>{
+      try{await catViaFill()}catch(_ci){}
+      if(catViaRigger()){try{if(!rig.port)await catConnect()}catch(_cj){}}
+      else if(navigator.serial&&navigator.serial.getPorts){try{const _ck=await navigator.serial.getPorts();let _cl=-1;try{_cl=+localStorage.getItem("cwiu-cat-port")}catch(_cm){}const _cn=_ck.length===1?_ck[0]:_ck[_cl];if(_cn&&!rig.port)await catConnect(_cn)}catch(_co){}}
       if(mode!=="mic")await startListening(true);
-      if(_cg.autoChase!==false&&rig.port)setTimeout(()=>{try{if(!chase.on&&mode==="mic")chaseStart()}catch(_co){}},4000)},1200)}
+      if(_ch.autoChase!==false&&rig.port)setTimeout(()=>{try{if(!chase.on&&mode==="mic")chaseStart()}catch(_cp){}},4000)},1200)}
   if(_bV){updChecked=true;setTimeout(()=>msg(T("CWIU1MVI aggiornato alla versione {0}.",WEB_VERSION)),400)}
-  else if(_bY)updChecked=true;
+  else if(_bZ)updChecked=true;
   else if(!_bT){setTimeout(showWelcome,250);setTimeout(()=>{if(!updChecked){updChecked=true;autoUpd()}},60000)}else{updChecked=true;setTimeout(autoUpd,800)}})();
 $("wVer").textContent=T("versione {0}",WEB_VERSION);
-if(APP&&APP.info)APP.info().then(_cp=>{$("wVer").textContent=T("versione {0}",WEB_VERSION)+" · app "+_cp.version+(_cp.build?" (build "+_cp.build+")":"")}).catch(()=>{});
-function savePrefs(_cq){try{localStorage.setItem("cwiu-prefs",JSON.stringify(_cq))}catch(_cr){}}
+if(APP&&APP.info)APP.info().then(_cq=>{$("wVer").textContent=T("versione {0}",WEB_VERSION)+" · app "+_cq.version+(_cq.build?" (build "+_cq.build+")":"")}).catch(()=>{});
+function savePrefs(_cr){try{localStorage.setItem("cwiu-prefs",JSON.stringify(_cr))}catch(_cs){}}
 function openPrefs(){
-  const _cs=$("prefs"),_ct=prefs();
-  const _cu=$("pLang");if(!_cu.children.length)for(const [_cv,_cw] of LANGS){const _cx=document.createElement("option");_cx.value=_cv;_cx.textContent=_cw;_cu.appendChild(_cx)}
-  _cu.value=LANG;
-  const _cy=$("pStyle");_cy.textContent="";for(const [_cz,_cA,_cB] of STYLES){const _cC=document.createElement("option");_cC.value=_cz;_cC.textContent=_cA+" · "+_cB;_cy.appendChild(_cC)}
-  _cy.value=STYLE;
-  $("pCall").value=_ct.call||"";
-  {const _cD={...QSO_TPL.normal,...(_ct.tplN||{})},_cE={...QSO_TPL.contest,...(_ct.tplC||{})};for(const _cF of TXK){$("tpl_"+_cF).value=_cD[_cF];$("tplc_"+_cF).value=_cE[_cF]}}
-  $("pName").value=_ct.opName||"";$("pXch").value=_ct.xch||"";$("pGrid").value=_ct.grid||"";$("pUpd").checked=_ct.upd!==false;
-  let _cG=false;try{_cG=localStorage.getItem("cwiu-welcome-hide")==="1"}catch(_cH){}$("pWelcome").checked=!_cG;$("pAuto").checked=_ct.autoOn===true;hqPrefs();$("pCallAlert").checked=_ct.callAlert!==false;$("pAutoChase").checked=_ct.autoChase!==false;
+  const _ct=$("prefs"),_cu=prefs();
+  const _cv=$("pLang");if(!_cv.children.length)for(const [_cw,_cx] of LANGS){const _cy=document.createElement("option");_cy.value=_cw;_cy.textContent=_cx;_cv.appendChild(_cy)}
+  _cv.value=LANG;
+  const _cz=$("pStyle");_cz.textContent="";for(const [_cA,_cB,_cC] of STYLES){const _cD=document.createElement("option");_cD.value=_cA;_cD.textContent=_cB+" · "+_cC;_cz.appendChild(_cD)}
+  _cz.value=STYLE;
+  $("pCall").value=_cu.call||"";
+  {const _cE={...QSO_TPL.normal,...(_cu.tplN||{})},_cF={...QSO_TPL.contest,...(_cu.tplC||{})};for(const _cG of TXK){$("tpl_"+_cG).value=_cE[_cG];$("tplc_"+_cG).value=_cF[_cG]}}
+  $("pName").value=_cu.opName||"";$("pXch").value=_cu.xch||"";$("pGrid").value=_cu.grid||"";$("pUpd").checked=_cu.upd!==false;
+  let _cH=false;try{_cH=localStorage.getItem("cwiu-welcome-hide")==="1"}catch(_cI){}$("pWelcome").checked=!_cH;$("pAuto").checked=_cu.autoOn===true;hqPrefs();$("pCallAlert").checked=_cu.callAlert!==false;$("pAutoChase").checked=_cu.autoChase!==false;
   $("pDir").textContent=T("solo nell'app per Mac e Windows");$("pDirBtn").hidden=!window.cwiuLog;
-  if(window.cwiuLog)window.cwiuLog.folder().then(_cI=>$("pDir").textContent=_cI).catch(()=>{});
-  if(!_cs.open){try{_cs.showModal()}catch(_cJ){_cs.setAttribute("open","")}}
+  if(window.cwiuLog)window.cwiuLog.folder().then(_cJ=>$("pDir").textContent=_cJ).catch(()=>{});
+  if(!_ct.open){try{_ct.showModal()}catch(_cK){_ct.setAttribute("open","")}}
 }
-const clean=(_cK,_cL)=>_cK.toUpperCase().replace(/\s+/g,"").replace(_cL,"");
+const clean=(_cL,_cM)=>_cL.toUpperCase().replace(/\s+/g,"").replace(_cM,"");
 $("pStyle").onchange=()=>setStyle($("pStyle").value);
-$("pCall").onchange=()=>{const _cM=prefs();_cM.call=clean($("pCall").value,/[^A-Z0-9\/]/g);$("pCall").value=_cM.call;savePrefs(_cM)};
-$("pGrid").onchange=()=>{const _cN=prefs();const _cO=clean($("pGrid").value,/[^A-Z0-9]/g);_cN.grid=/^[A-R]{2}[0-9]{2}([A-X]{2})?$/.test(_cO)?_cO:"";$("pGrid").value=_cN.grid;savePrefs(_cN)};
-const tplClean=_cP=>_cP.toUpperCase().replace(/[^A-Z0-9 \/?.,=+{}-]/g,"").replace(/\s+/g," ").trim();
-for(const [_cQ,_cR,_cS] of [["tpl","tplN","normal"],["tplc","tplC","contest"]]){
-  for(const _cT of ["cq","answer","report","reportR","end","endR"])$(_cQ+"_"+_cT).onchange=()=>{const _cU=prefs();_cU[_cR]=_cU[_cR]||{};const _cV=tplClean($(_cQ+"_"+_cT).value);
-    if(_cV||_cS==="contest")_cU[_cR][_cT]=_cV;else delete _cU[_cR][_cT];$(_cQ+"_"+_cT).value=_cU[_cR][_cT]!=null?_cU[_cR][_cT]:QSO_TPL[_cS][_cT];savePrefs(_cU);if(typeof qsoUi==="function")qsoUi()};
-  $(_cQ+"Reset").onclick=()=>{const _cW=prefs();_cW[_cR]={};savePrefs(_cW);for(const _cX of TXK)$(_cQ+"_"+_cX).value=QSO_TPL[_cS][_cX];if(typeof qsoUi==="function")qsoUi()}}
-$("pName").onchange=()=>{const _cY=prefs();_cY.opName=clean($("pName").value,/[^A-Z]/g).slice(0,12);$("pName").value=_cY.opName;savePrefs(_cY);if(typeof qsoUi==="function")qsoUi()};
-$("pXch").onchange=()=>{const _cZ=prefs();_cZ.xch=clean($("pXch").value,/[^A-Z0-9\/]/g).slice(0,8);$("pXch").value=_cZ.xch;savePrefs(_cZ);if(typeof qsoUi==="function")qsoUi()};
-$("pUpd").onchange=()=>{const _da=prefs();_da.upd=$("pUpd").checked;savePrefs(_da)};
-$("pCallAlert").onchange=()=>{const _db=prefs();_db.callAlert=$("pCallAlert").checked;savePrefs(_db)};
-function hqPrefs(){const _dc=window.cwiuHamqth;$("hqBox").hidden=!_dc;if(!_dc)return;const _dd=prefs();
-  $("pHqLookup").checked=_dd.hqLookup!==false;$("pHqUp").checked=!!_dd.hqUpload;$("pHqPass").value="";
-  _dc.status().then(_de=>{$("pHqUser").value=_de.user||"";$("pHqState").textContent=_de.user?(_de.hasPass?T("account salvato"):T("manca la password")):T("non configurato")}).catch(()=>{})}
-$("pHqSave").onclick=async()=>{const _df=window.cwiuHamqth;if(!_df)return;const _dg=$("pHqUser").value.toUpperCase().replace(/[^A-Z0-9\/]/g,""),_dh=$("pHqPass").value;
-  $("pHqState").textContent=T("provo…");await _df.set(_dg,_dh||undefined);$("pHqPass").value="";if(!_dg){$("pHqState").textContent=T("non configurato");return}
-  const _di=await _df.test();$("pHqState").textContent=_di&&_di.ok?T("collegato a HamQTH ✓"):T("accesso non riuscito: {0}",(_di&&_di.error)||"?")};
-$("pHqLookup").onchange=()=>{const _dj=prefs();_dj.hqLookup=$("pHqLookup").checked;savePrefs(_dj)};
-$("pHqUp").onchange=()=>{const _dk=prefs();_dk.hqUpload=$("pHqUp").checked;savePrefs(_dk)};
-$("pAuto").onchange=()=>{const _dl=prefs();_dl.autoOn=$("pAuto").checked;savePrefs(_dl)};
-$("pAutoChase").onchange=()=>{const _dm=prefs();_dm.autoChase=$("pAutoChase").checked;savePrefs(_dm)};
-$("pWelcome").onchange=()=>{try{localStorage.setItem("cwiu-welcome-hide",$("pWelcome").checked?"0":"1")}catch(_dn){}};
+$("pCall").onchange=()=>{const _cN=prefs();_cN.call=clean($("pCall").value,/[^A-Z0-9\/]/g);$("pCall").value=_cN.call;savePrefs(_cN)};
+$("pGrid").onchange=()=>{const _cO=prefs();const _cP=clean($("pGrid").value,/[^A-Z0-9]/g);_cO.grid=/^[A-R]{2}[0-9]{2}([A-X]{2})?$/.test(_cP)?_cP:"";$("pGrid").value=_cO.grid;savePrefs(_cO)};
+const tplClean=_cQ=>_cQ.toUpperCase().replace(/[^A-Z0-9 \/?.,=+{}-]/g,"").replace(/\s+/g," ").trim();
+for(const [_cR,_cS,_cT] of [["tpl","tplN","normal"],["tplc","tplC","contest"]]){
+  for(const _cU of ["cq","answer","report","reportR","end","endR"])$(_cR+"_"+_cU).onchange=()=>{const _cV=prefs();_cV[_cS]=_cV[_cS]||{};const _cW=tplClean($(_cR+"_"+_cU).value);
+    if(_cW||_cT==="contest")_cV[_cS][_cU]=_cW;else delete _cV[_cS][_cU];$(_cR+"_"+_cU).value=_cV[_cS][_cU]!=null?_cV[_cS][_cU]:QSO_TPL[_cT][_cU];savePrefs(_cV);if(typeof qsoUi==="function")qsoUi()};
+  $(_cR+"Reset").onclick=()=>{const _cX=prefs();_cX[_cS]={};savePrefs(_cX);for(const _cY of TXK)$(_cR+"_"+_cY).value=QSO_TPL[_cT][_cY];if(typeof qsoUi==="function")qsoUi()}}
+$("pName").onchange=()=>{const _cZ=prefs();_cZ.opName=clean($("pName").value,/[^A-Z]/g).slice(0,12);$("pName").value=_cZ.opName;savePrefs(_cZ);if(typeof qsoUi==="function")qsoUi()};
+$("pXch").onchange=()=>{const _da=prefs();_da.xch=clean($("pXch").value,/[^A-Z0-9\/]/g).slice(0,8);$("pXch").value=_da.xch;savePrefs(_da);if(typeof qsoUi==="function")qsoUi()};
+$("pUpd").onchange=()=>{const _db=prefs();_db.upd=$("pUpd").checked;savePrefs(_db)};
+$("pCallAlert").onchange=()=>{const _dc=prefs();_dc.callAlert=$("pCallAlert").checked;savePrefs(_dc)};
+function hqPrefs(){const _dd=window.cwiuHamqth;$("hqBox").hidden=!_dd;if(!_dd)return;const _de=prefs();
+  $("pHqLookup").checked=_de.hqLookup!==false;$("pHqUp").checked=!!_de.hqUpload;$("pHqPass").value="";
+  _dd.status().then(_df=>{$("pHqUser").value=_df.user||"";$("pHqState").textContent=_df.user?(_df.hasPass?T("account salvato"):T("manca la password")):T("non configurato")}).catch(()=>{})}
+$("pHqSave").onclick=async()=>{const _dg=window.cwiuHamqth;if(!_dg)return;const _dh=$("pHqUser").value.toUpperCase().replace(/[^A-Z0-9\/]/g,""),_di=$("pHqPass").value;
+  $("pHqState").textContent=T("provo…");await _dg.set(_dh,_di||undefined);$("pHqPass").value="";if(!_dh){$("pHqState").textContent=T("non configurato");return}
+  const _dj=await _dg.test();$("pHqState").textContent=_dj&&_dj.ok?T("collegato a HamQTH ✓"):T("accesso non riuscito: {0}",(_dj&&_dj.error)||"?")};
+$("pHqLookup").onchange=()=>{const _dk=prefs();_dk.hqLookup=$("pHqLookup").checked;savePrefs(_dk)};
+$("pHqUp").onchange=()=>{const _dl=prefs();_dl.hqUpload=$("pHqUp").checked;savePrefs(_dl)};
+$("pAuto").onchange=()=>{const _dm=prefs();_dm.autoOn=$("pAuto").checked;savePrefs(_dm)};
+$("pAutoChase").onchange=()=>{const _dn=prefs();_dn.autoChase=$("pAutoChase").checked;savePrefs(_dn)};
+$("pWelcome").onchange=()=>{try{localStorage.setItem("cwiu-welcome-hide",$("pWelcome").checked?"0":"1")}catch(_do){}};
 $("pDirBtn").onclick=()=>window.cwiuLog&&window.cwiuLog.openFolder();
 $("pLang").onchange=()=>{$("pCall").onchange();$("pGrid").onchange();setLang($("pLang").value)};
 $("pClose").onclick=()=>{$("pCall").onchange();$("pGrid").onchange();$("prefs").close()};
-function setLang(_do){
-  if(!LANGS.some(_dp=>_dp[0]===_do)||_do===LANG)return;
-  try{localStorage.setItem("cwiu-lang",_do);localStorage.setItem("cwiu-resume",JSON.stringify({t:Date.now(),mic:mode==="mic",cat:!!rig.port,chase:!!(typeof chase!=="undefined"&&chase.on)}))}catch(_dq){}
-  if(APP&&APP.setLang)APP.setLang(_do);
-  try{if(REC.on)recStop()}catch(_dr){}
+function setLang(_dp){
+  if(!LANGS.some(_dq=>_dq[0]===_dp)||_dp===LANG)return;
+  try{localStorage.setItem("cwiu-lang",_dp);localStorage.setItem("cwiu-resume",JSON.stringify({t:Date.now(),mic:mode==="mic",cat:!!rig.port,chase:!!(typeof chase!=="undefined"&&chase.on),rb:(typeof RIGGER_BACK!=="undefined"&&RIGGER_BACK)?{...RIGGER_BACK,next:0}:null}))}catch(_dr){}
+  if(APP&&APP.setLang)APP.setLang(_dp);
+  try{if(REC.on)recStop()}catch(_ds){}
   setTimeout(()=>location.reload(),REC.on?600:50);
 }
 if(APP&&APP.setLang)APP.setLang(LANG);
 const UPD=APP&&APP.update?APP.update:null;let updBusy=false;
-function updShow(_ds,_dt,_du){_du=_du||{};const _dv=$("upd");$("uText").textContent=_ds;$("uHint").textContent=_dt||"";
-  $("uBarWrap").hidden=!_du.bar;$("uPage").hidden=!_du.page;$("uLater").textContent=_du.close||T("Più tardi");$("uLater").hidden=!!_du.noClose;
-  if(!_dv.open){try{_dv.showModal()}catch(_dw){_dv.setAttribute("open","")}}}
-if(UPD)UPD.onProgress(_dx=>{$("uBar").style.width=Math.round(_dx*100)+"%";if(_dx<1)$("uHint").textContent=T("scaricato {0}%",Math.round(_dx*100))});
+function updShow(_dt,_du,_dv){_dv=_dv||{};const _dw=$("upd");$("uText").textContent=_dt;$("uHint").textContent=_du||"";
+  $("uBarWrap").hidden=!_dv.bar;$("uPage").hidden=!_dv.page;$("uLater").textContent=_dv.close||T("Più tardi");$("uLater").hidden=!!_dv.noClose;
+  if(!_dw.open){try{_dw.showModal()}catch(_dx){_dw.setAttribute("open","")}}}
+if(UPD)UPD.onProgress(_dy=>{$("uBar").style.width=Math.round(_dy*100)+"%";if(_dy<1)$("uHint").textContent=T("scaricato {0}%",Math.round(_dy*100))});
 $("uLater").onclick=()=>{if(updBusy&&UPD)UPD.cancel();updBusy=false;$("upd").close()};
-async function checkUpdate(_dy){
-  if(!UPD){if(_dy)updShow(T("Gli aggiornamenti automatici funzionano nell'app per Mac e Windows."),"",{close:T("Chiudi"),page:true});return}
+async function checkUpdate(_dz){
+  if(!UPD){if(_dz)updShow(T("Gli aggiornamenti automatici funzionano nell'app per Mac e Windows."),"",{close:T("Chiudi"),page:true});return}
   if(updBusy)return;
-  if(_dy)updShow(T("Controllo se c'è una versione nuova…"),"",{close:T("Chiudi")});
-  const _dz=await UPD.check();
-  if(_dz&&_dz.failed){updShow(T("L'aggiornamento automatico a CWIU1MVI {0} non è andato a buon fine.",_dz.version),T("Per non ripetere il tentativo all'infinito non riprovo da solo: scarica e installa la nuova versione dalla pagina dei download (su Windows il file Setup.exe)."),{close:T("Chiudi"),page:true});return}
-  if(!_dz||!_dz.available){
-    if(_dy)updShow(_dz&&_dz.error?T("Non riesco a controllare gli aggiornamenti."):T("Hai già l'ultima versione."),_dz&&_dz.error?T("Controlla la connessione a internet e riprova più tardi."):(_dz&&_dz.current?"CWIU1MVI "+_dz.current.version+(_dz.current.build?" · build "+_dz.current.build:""):""),{close:T("Chiudi")});
+  if(_dz)updShow(T("Controllo se c'è una versione nuova…"),"",{close:T("Chiudi")});
+  const _dA=await UPD.check();
+  if(_dA&&_dA.failed){updShow(T("L'aggiornamento automatico a CWIU1MVI {0} non è andato a buon fine.",_dA.version),T("Per non ripetere il tentativo all'infinito non riprovo da solo: scarica e installa la nuova versione dalla pagina dei download (su Windows il file Setup.exe)."),{close:T("Chiudi"),page:true});return}
+  if(!_dA||!_dA.available){
+    if(_dz)updShow(_dA&&_dA.error?T("Non riesco a controllare gli aggiornamenti."):T("Hai già l'ultima versione."),_dA&&_dA.error?T("Controlla la connessione a internet e riprova più tardi."):(_dA&&_dA.current?"CWIU1MVI "+_dA.current.version+(_dA.current.build?" · build "+_dA.current.build:""):""),{close:T("Chiudi")});
     return}
-  const _dA="CWIU1MVI "+_dz.version+(_dz.kind==="app"&&_dz.build?" · build "+_dz.build:"");
-  if(!_dz.writable){updShow(T("È disponibile {0}.",_dA),T("Per aggiornarsi da sola l'app deve stare nella cartella Applicazioni (su Windows in una cartella tua). Spostala lì, oppure scarica la nuova versione dalla pagina dei download."),{close:T("Chiudi"),page:true});return}
-  try{localStorage.setItem("cwiu-resume",JSON.stringify({t:Date.now(),mic:mode==="mic",cat:!!rig.port,chase:!!(typeof chase!=="undefined"&&chase.on)}))}catch(_dB){}
+  const _dB="CWIU1MVI "+_dA.version+(_dA.kind==="app"&&_dA.build?" · build "+_dA.build:"");
+  if(!_dA.writable){updShow(T("È disponibile {0}.",_dB),T("Per aggiornarsi da sola l'app deve stare nella cartella Applicazioni (su Windows in una cartella tua). Spostala lì, oppure scarica la nuova versione dalla pagina dei download."),{close:T("Chiudi"),page:true});return}
+  try{localStorage.setItem("cwiu-resume",JSON.stringify({t:Date.now(),mic:mode==="mic",cat:!!rig.port,chase:!!(typeof chase!=="undefined"&&chase.on),rb:(typeof RIGGER_BACK!=="undefined"&&RIGGER_BACK)?{...RIGGER_BACK,next:0}:null}))}catch(_dC){}
   if(mode==="mic")await stopAll();
   updBusy=true;$("uBar").style.width="0";
-  updShow(T("Scarico {0}…",_dA),_dz.kind==="web"?T("Aggiornamento leggero: si applica in un attimo, senza reinstallare."):T("Aggiornamento completo dell'app: al termine CWIU1MVI si riavvia da sola, già aggiornata."),{bar:true});
-  const _dC=await UPD.install();
+  updShow(T("Scarico {0}…",_dB),_dA.kind==="web"?T("Aggiornamento leggero: si applica in un attimo, senza reinstallare."):T("Aggiornamento completo dell'app: al termine CWIU1MVI si riavvia da sola, già aggiornata."),{bar:true});
+  const _dD=await UPD.install();
   if(!updBusy)return;
   updBusy=false;
-  if(_dC&&_dC.ok)updShow(_dC.reload?T("Aggiornamento pronto: ricarico…"):T("Aggiornamento pronto: riavvio…"),"",{bar:true,noClose:true});
-  else updShow(T("L'aggiornamento non è riuscito."),(_dC&&_dC.error?_dC.error+". ":"")+T("Puoi scaricare la nuova versione dalla pagina dei download."),{close:T("Chiudi"),page:true});
+  if(_dD&&_dD.ok)updShow(_dD.reload?T("Aggiornamento pronto: ricarico…"):T("Aggiornamento pronto: riavvio…"),"",{bar:true,noClose:true});
+  else updShow(T("L'aggiornamento non è riuscito."),(_dD&&_dD.error?_dD.error+". ":"")+T("Puoi scaricare la nuova versione dalla pagina dei download."),{close:T("Chiudi"),page:true});
 }
 function menuState(){if(!APP||!LAY)return;
   APP.state({listening:mode==="mic",cat:!!(typeof rig!=="undefined"&&rig.port),cwOk:!!(typeof rig!=="undefined"&&rig.port&&!rig.cw),
-    locked:!!LAY.locked,style:STYLE,hunting:!!(typeof hunt!=="undefined"&&hunt.on),rec:!!(typeof REC!=="undefined"&&REC.on),chasing:!!(typeof chase!=="undefined"&&chase.on),shown:Object.fromEntries(Object.keys(MODS).map(_dD=>[_dD,!MODS[_dD].classList.contains("min")]))})}
-if(APP)APP.onMenu(_dE=>{
-  if(_dE==="listen")$("micBtn").click();
-  else if(_dE==="cat")$("catBtn").click();
-  else if(_dE==="cw")$("setCwBtn").click();
-  else if(_dE==="scan")$("scanBtn").disabled||$("scanBtn").click();
-  else if(_dE==="hunt")$("huntBtn").disabled||$("huntBtn").click();
-  else if(_dE==="guide")openGuide();
-  else if(_dE.startsWith("guide:"))openGuide(_dE.slice(6));
-  else if(_dE.startsWith("style:"))setStyle(_dE.slice(6));
-  else if(_dE==="welcome")showWelcome();
-  else if(_dE==="update")checkUpdate(true);
-  else if(_dE==="lock")setLocked(!LAY.locked);
-  else if(_dE==="reset")resetLayout();
-  else if(_dE==="logs")APP&&window.cwiuLog&&window.cwiuLog.openFolder();
-  else if(_dE==="clear")clearMsgs();
-  else if(_dE==="find"){if(MODS.log.classList.contains("min"))toggleMin("log");$("q").focus();$("q").select()}
-  else if(_dE.startsWith("mod:")){const _dF=_dE.slice(4);if(MODS[_dF])toggleMin(_dF)}
-  else if(_dE.startsWith("show:")){const _dG=_dE.slice(5);if(MODS[_dG])showMod(_dG)}
-  else if(_dE.startsWith("view:")){showMod("log");setView(_dE.slice(5))}
-  else if(_dE.startsWith("band:")){const _dH=document.querySelector('#bands button[data-b="'+_dE.slice(5)+'"]');if(_dH&&!_dH.disabled)_dH.click()}
-  else if(_dE==="prefs")openPrefs();
-  else if(_dE==="chase")chaseStart();
-  else if(_dE==="adif")exportAdif();
-  else if(_dE==="rec")recStart();
-  else if(_dE.startsWith("lang:"))setLang(_dE.slice(5));
+    locked:!!LAY.locked,style:STYLE,hunting:!!(typeof hunt!=="undefined"&&hunt.on),rec:!!(typeof REC!=="undefined"&&REC.on),chasing:!!(typeof chase!=="undefined"&&chase.on),shown:Object.fromEntries(Object.keys(MODS).map(_dE=>[_dE,!MODS[_dE].classList.contains("min")]))})}
+if(APP)APP.onMenu(_dF=>{
+  if(_dF==="listen")$("micBtn").click();
+  else if(_dF==="cat")$("catBtn").click();
+  else if(_dF==="cw")$("setCwBtn").click();
+  else if(_dF==="scan")$("scanBtn").disabled||$("scanBtn").click();
+  else if(_dF==="hunt")$("huntBtn").disabled||$("huntBtn").click();
+  else if(_dF==="guide")openGuide();
+  else if(_dF.startsWith("guide:"))openGuide(_dF.slice(6));
+  else if(_dF.startsWith("style:"))setStyle(_dF.slice(6));
+  else if(_dF==="welcome")showWelcome();
+  else if(_dF==="update")checkUpdate(true);
+  else if(_dF==="lock")setLocked(!LAY.locked);
+  else if(_dF==="reset")resetLayout();
+  else if(_dF==="logs")APP&&window.cwiuLog&&window.cwiuLog.openFolder();
+  else if(_dF==="clear")clearMsgs();
+  else if(_dF==="find"){if(MODS.log.classList.contains("min"))toggleMin("log");$("q").focus();$("q").select()}
+  else if(_dF.startsWith("mod:")){const _dG=_dF.slice(4);if(MODS[_dG])toggleMin(_dG)}
+  else if(_dF.startsWith("show:")){const _dH=_dF.slice(5);if(MODS[_dH])showMod(_dH)}
+  else if(_dF.startsWith("view:")){showMod("log");setView(_dF.slice(5))}
+  else if(_dF.startsWith("band:")){const _dI=document.querySelector('#bands button[data-b="'+_dF.slice(5)+'"]');if(_dI&&!_dI.disabled)_dI.click()}
+  else if(_dF==="prefs")openPrefs();
+  else if(_dF==="chase")chaseStart();
+  else if(_dF==="adif")exportAdif();
+  else if(_dF==="rec")recStart();
+  else if(_dF.startsWith("lang:"))setLang(_dF.slice(5));
 });
 const PROP={d:null,at:0,err:false};
-function propEstimate(_dI){   // stima grossolana per gruppi di bande: flusso per le alte, K per tutte, giorno/notte dall'ora solare del proprio locatore
-  const _dJ=_dI.currentKIndex!=null?_dI.currentKIndex:_dI.kIndex,_dK=_dI.solarFlux,_dL=prefs();let _dM=9;try{const _dN=typeof gridLL==="function"&&gridLL(_dL.grid);if(_dN)_dM=_dN[1]}catch(_dO){}
-  const _dP=new Date(),_dQ=(_dP.getUTCHours()+_dP.getUTCMinutes()/60+_dM/15+24)%24,_dR=_dQ>=7&&_dQ<17,_dS=_dT=>Math.max(0,_dT-(_dJ>=5?2:_dJ>=4?1:0));
-  const _dU=!_dR?0:_dS(_dK>=150?2:_dK>=110?1:0),_dV=_dS(_dK>=100?2:_dK>=80?1:0)-(_dR?0:(_dK>=120?0:1)),_dW=_dS(_dR?0:2)+(_dR&&_dQ>=15?1:0);
-  return {day:_dR,v:[["80–40 m",Math.max(0,Math.min(2,_dW))],["30–17 m",Math.max(0,Math.min(2,_dV))],["15–10 m",Math.max(0,Math.min(2,_dU))]]}}
+function propEstimate(_dJ){   // stima grossolana per gruppi di bande: flusso per le alte, K per tutte, giorno/notte dall'ora solare del proprio locatore
+  const _dK=_dJ.currentKIndex!=null?_dJ.currentKIndex:_dJ.kIndex,_dL=_dJ.solarFlux,_dM=prefs();let _dN=9;try{const _dO=typeof gridLL==="function"&&gridLL(_dM.grid);if(_dO)_dN=_dO[1]}catch(_dP){}
+  const _dQ=new Date(),_dR=(_dQ.getUTCHours()+_dQ.getUTCMinutes()/60+_dN/15+24)%24,_dS=_dR>=7&&_dR<17,_dT=_dU=>Math.max(0,_dU-(_dK>=5?2:_dK>=4?1:0));
+  const _dV=!_dS?0:_dT(_dL>=150?2:_dL>=110?1:0),_dW=_dT(_dL>=100?2:_dL>=80?1:0)-(_dS?0:(_dL>=120?0:1)),_dX=_dT(_dS?0:2)+(_dS&&_dR>=15?1:0);
+  return {day:_dS,v:[["80–40 m",Math.max(0,Math.min(2,_dX))],["30–17 m",Math.max(0,Math.min(2,_dW))],["15–10 m",Math.max(0,Math.min(2,_dV))]]}}
 function propBands(){   // [[banda, stazioni]] dalle bande con almeno una stazione; null se il cluster non sta dando spot
-  try{if(typeof CL==="undefined"||CL.state!=="online")return null;const _dX=Date.now(),_dY=new Map();let _dZ=false;
-    for(const _ea of CL.spots.values()){const _eb=_ea.tNear||0;if(!_ea.near||!_ea.near.size||_dX-_eb>10*60000)continue;const _ec=CW_BANDS.find(_ed=>_ea.hz>=_ed[1]-2000&&_ea.hz<=_ed[2]+30000);if(!_ec)continue;_dZ=true;if(!_dY.has(_ec[0]))_dY.set(_ec[0],new Set());_dY.get(_ec[0]).add(_ea.call)}
-    if(!_dZ)return null;return CW_BANDS.filter(_ee=>_dY.has(_ee[0])).map(_ef=>[/cm/.test(_ef[0])?_ef[0].replace("cm"," cm"):_ef[0]+" m",_dY.get(_ef[0]).size])}catch(_eg){return null}}
-function propLive(_eh){const _ei=propBands();if(!_ei)return false;
-  const _ej=Math.max(..._ei.map(_ek=>_ek[1]),1);for(const [_el,_em] of _ei){const _en=document.createElement("span");_en.textContent=_el;const _eo=document.createElement("span");_eo.className="pbar";const _ep=document.createElement("i");_ep.style.width=Math.max(3,Math.round(100*_em/_ej))+"%";_eo.appendChild(_ep);const _eq=document.createElement("b");_eq.textContent=String(_em);_eh.appendChild(_en);_eh.appendChild(_eo);_eh.appendChild(_eq)}
-  const _er=document.createElement("span");_er.className="n";_er.textContent=T("stazioni CW sentite dagli skimmer vicini, ultimi 10 minuti");_eh.appendChild(_er);return true}
+  try{if(typeof CL==="undefined"||CL.state!=="online")return null;const _dY=Date.now(),_dZ=new Map();let _ea=false;
+    for(const _eb of CL.spots.values()){const _ec=_eb.tNear||0;if(!_eb.near||!_eb.near.size||_dY-_ec>10*60000)continue;const _ed=CW_BANDS.find(_ee=>_eb.hz>=_ee[1]-2000&&_eb.hz<=_ee[2]+30000);if(!_ed)continue;_ea=true;if(!_dZ.has(_ed[0]))_dZ.set(_ed[0],new Set());_dZ.get(_ed[0]).add(_eb.call)}
+    if(!_ea)return null;return CW_BANDS.filter(_ef=>_dZ.has(_ef[0])).map(_eg=>[/cm/.test(_eg[0])?_eg[0].replace("cm"," cm"):_eg[0]+" m",_dZ.get(_eg[0]).size])}catch(_eh){return null}}
+function propLive(_ei){const _ej=propBands();if(!_ej)return false;
+  const _ek=Math.max(..._ej.map(_el=>_el[1]),1);for(const [_em,_en] of _ej){const _eo=document.createElement("span");_eo.textContent=_em;const _ep=document.createElement("span");_ep.className="pbar";const _eq=document.createElement("i");_eq.style.width=Math.max(3,Math.round(100*_en/_ek))+"%";_ep.appendChild(_eq);const _er=document.createElement("b");_er.textContent=String(_en);_ei.appendChild(_eo);_ei.appendChild(_ep);_ei.appendChild(_er)}
+  const _es=document.createElement("span");_es.className="n";_es.textContent=T("stazioni CW sentite dagli skimmer vicini, ultimi 10 minuti");_ei.appendChild(_es);return true}
 function propRender(){
-  const _es=PROP.d,_et=(_eu,_ev)=>_eu==null||!isFinite(_eu)?"—":_ev?(+_eu).toFixed(_ev):String(Math.round(_eu));
-  $("prSfi").textContent=_es?_et(_es.solarFlux):"—";$("prSsn").textContent=_es?_et(_es.sunspotNumber):"—";$("prK").textContent=_es?_et(_es.currentKIndex!=null?_es.currentKIndex:_es.kIndex,_es.currentKIndex!=null?1:0):"—";$("prA").textContent=_es?_et(_es.aIndex!=null?_es.aIndex:_es.kielAIndex):"—";
-  const _ew=$("prBands");_ew.textContent="";_ew.style.gridTemplateColumns="";
-  if(!_es){$("prLine").textContent=PROP.err?T("Dati di propagazione non disponibili adesso."):T("Carico i dati di propagazione…");$("propWhen").textContent="";$("prEst").textContent="";propLive(_ew);return}
-  const _ex={quiet:T("calmo"),unsettled:T("instabile"),active:T("attivo"),"minor storm":T("tempesta debole"),"major storm":T("tempesta forte"),"severe storm":T("tempesta molto forte")},_ey=String(_es.geomagneticField||"").toLowerCase();
-  const _ez={"very low":T("molto bassa"),low:T("bassa"),moderate:T("moderata"),active:T("alta"),high:T("alta"),"very high":T("molto alta")},_eA=String(_es.solarActivity||"").toLowerCase();
-  $("prLine").textContent=[_es.solarActivity&&T("Sole: attività {0}",_ez[_eA]||_es.solarActivity),_es.geomagneticField&&T("Campo geomagnetico: {0}",_ex[_ey]||_es.geomagneticField),_es.aurora&&T("aurora: {0}",/^y/i.test(_es.aurora)?T("sì"):/^n/i.test(_es.aurora)?T("no"):_es.aurora)].filter(Boolean).join(" · ");
-  const _eB=propEstimate(_es),_eC=[T("scarse"),T("discrete"),T("buone")],_eD=["p","f","g"],_eE=$("prEst");_eE.textContent="";
-  for(const [_eF,_eG] of _eB.v){const _eH=document.createElement("span");_eH.textContent=_eF+" ";const _eI=document.createElement("b");_eI.className=_eD[_eG];_eI.textContent="● "+_eC[_eG];_eH.appendChild(_eI);_eE.appendChild(_eH)}
-  {const _eJ=document.createElement("span");_eJ.className="n";_eJ.textContent=_eB.day?T("(giorno, stima)"):T("(notte, stima)");_eE.appendChild(_eJ)}
-  if(!propLive(_ew)){const _eK=document.createElement("span");_eK.className="n";_eK.textContent=T("Bande aperte adesso: in attesa degli spot del cluster.");_ew.appendChild(_eK)}
-  const _eL=_es.fetchedAt?new Date(_es.fetchedAt):null;$("propWhen").textContent=_eL&&isFinite(_eL)?T("dati delle {0} UTC",pad2(_eL.getUTCHours())+":"+pad2(_eL.getUTCMinutes())):""}
+  const _et=PROP.d,_eu=(_ev,_ew)=>_ev==null||!isFinite(_ev)?"—":_ew?(+_ev).toFixed(_ew):String(Math.round(_ev));
+  $("prSfi").textContent=_et?_eu(_et.solarFlux):"—";$("prSsn").textContent=_et?_eu(_et.sunspotNumber):"—";$("prK").textContent=_et?_eu(_et.currentKIndex!=null?_et.currentKIndex:_et.kIndex,_et.currentKIndex!=null?1:0):"—";$("prA").textContent=_et?_eu(_et.aIndex!=null?_et.aIndex:_et.kielAIndex):"—";
+  const _ex=$("prBands");_ex.textContent="";_ex.style.gridTemplateColumns="";
+  if(!_et){$("prLine").textContent=PROP.err?T("Dati di propagazione non disponibili adesso."):T("Carico i dati di propagazione…");$("propWhen").textContent="";$("prEst").textContent="";propLive(_ex);return}
+  const _ey={quiet:T("calmo"),unsettled:T("instabile"),active:T("attivo"),"minor storm":T("tempesta debole"),"major storm":T("tempesta forte"),"severe storm":T("tempesta molto forte")},_ez=String(_et.geomagneticField||"").toLowerCase();
+  const _eA={"very low":T("molto bassa"),low:T("bassa"),moderate:T("moderata"),active:T("alta"),high:T("alta"),"very high":T("molto alta")},_eB=String(_et.solarActivity||"").toLowerCase();
+  $("prLine").textContent=[_et.solarActivity&&T("Sole: attività {0}",_eA[_eB]||_et.solarActivity),_et.geomagneticField&&T("Campo geomagnetico: {0}",_ey[_ez]||_et.geomagneticField),_et.aurora&&T("aurora: {0}",/^y/i.test(_et.aurora)?T("sì"):/^n/i.test(_et.aurora)?T("no"):_et.aurora)].filter(Boolean).join(" · ");
+  const _eC=propEstimate(_et),_eD=[T("scarse"),T("discrete"),T("buone")],_eE=["p","f","g"],_eF=$("prEst");_eF.textContent="";
+  for(const [_eG,_eH] of _eC.v){const _eI=document.createElement("span");_eI.textContent=_eG+" ";const _eJ=document.createElement("b");_eJ.className=_eE[_eH];_eJ.textContent="● "+_eD[_eH];_eI.appendChild(_eJ);_eF.appendChild(_eI)}
+  {const _eK=document.createElement("span");_eK.className="n";_eK.textContent=_eC.day?T("(giorno, stima)"):T("(notte, stima)");_eF.appendChild(_eK)}
+  if(!propLive(_ex)){const _eL=document.createElement("span");_eL.className="n";_eL.textContent=T("Bande aperte adesso: in attesa degli spot del cluster.");_ex.appendChild(_eL)}
+  const _eM=_et.fetchedAt?new Date(_et.fetchedAt):null;$("propWhen").textContent=_eM&&isFinite(_eM)?T("dati delle {0} UTC",pad2(_eM.getUTCHours())+":"+pad2(_eM.getUTCMinutes())):""}
 async function propLoad(){
-  try{const _eM=await fetch("https://www.hamqth.com/api/v2/solar",{cache:"no-store"});if(!_eM.ok)throw 0;const _eN=await _eM.json();if(_eN&&_eN.solarFlux!=null){PROP.d=_eN;PROP.at=Date.now();PROP.err=false}else throw 0}catch(_eO){PROP.err=true}
+  try{const _eN=await fetch("https://www.hamqth.com/api/v2/solar",{cache:"no-store"});if(!_eN.ok)throw 0;const _eO=await _eN.json();if(_eO&&_eO.solarFlux!=null){PROP.d=_eO;PROP.at=Date.now();PROP.err=false}else throw 0}catch(_eP){PROP.err=true}
   propRender()}
-try{propRender();setTimeout(propLoad,2500);setInterval(()=>{if(!document.hidden||Date.now()-PROP.at>30*60000)propLoad()},15*60000);setInterval(propRender,20000)}catch(_eP){}
-{let _eQ=false,_eR="";const _eS=$("rigSetup"),_eT=$("rigSetupBtn"),_eU=_eV=>{_eS.hidden=!_eV;_eT.setAttribute("aria-expanded",String(_eV))};
-  _eT.onclick=()=>{_eQ=true;_eU(_eS.hidden)};
-  const _eW=()=>{const _eX=String(!!rig.port)+"|"+mode;if(_eX===_eR)return;_eR=_eX;if(!_eQ||(rig.port&&mode==="mic")){_eQ=false;_eU(!(rig.port&&mode==="mic"))}};
-  try{_eW()}catch(_eY){_eU(true)}setInterval(()=>{try{_eW()}catch(_eZ){}},1000)}
-try{$("k7Sync").title=T("I comandi seguono la radio: se giri una manopola sull'apparato, qui si aggiorna in pochi secondi.")}catch(_fa){}
-function sunTimes(_fb,_fc,_fd){   // → [alba, tramonto] in ore UTC (decimali), o null oltre i circoli polari
-  const _fe=Math.PI/180,_ff=Date.UTC(_fd.getUTCFullYear(),0,0),_fg=Math.floor((_fd-_ff)/864e5),_fh=[];
-  for(const _fi of [true,false]){const _fj=_fc/15,_fk=_fg+((_fi?6:18)-_fj)/24,_fl=0.9856*_fk-3.289;let _fm=_fl+1.916*Math.sin(_fl*_fe)+0.020*Math.sin(2*_fl*_fe)+282.634;_fm=(_fm%360+360)%360;
-    let _fn=Math.atan(0.91764*Math.tan(_fm*_fe))/_fe;_fn=(_fn%360+360)%360;_fn+=Math.floor(_fm/90)*90-Math.floor(_fn/90)*90;_fn/=15;
-    const _fo=0.39782*Math.sin(_fm*_fe),_fp=Math.cos(Math.asin(_fo)),_fq=(Math.cos(90.833*_fe)-_fo*Math.sin(_fb*_fe))/(_fp*Math.cos(_fb*_fe));if(_fq>1||_fq<-1)return null;
-    let _fr=_fi?360-Math.acos(_fq)/_fe:Math.acos(_fq)/_fe;_fr/=15;const _fs=_fr+_fn-0.06571*_fk-6.622;_fh.push(((_fs-_fj)%24+24)%24)}
-  return _fh}
-function utcTick(){const _ft=new Date();$("utcNow").textContent=pad2(_ft.getUTCHours())+":"+pad2(_ft.getUTCMinutes());
-  let _fu="";try{const _fv=typeof gridLL==="function"&&gridLL(prefs().grid);if(_fv){const _fw=sunTimes(_fv[0],_fv[1],_ft);if(_fw){const _fx=_fy=>pad2(Math.floor(_fy))+":"+pad2(Math.floor(_fy%1*60));_fu="☀ "+_fx(_fw[0])+" – "+_fx(_fw[1])}}}catch(_fz){}
-  $("sunTimes").textContent=_fu}
-try{utcTick();setTimeout(utcTick,1500);setInterval(utcTick,10000)}catch(_fA){}
+try{propRender();setTimeout(propLoad,2500);setInterval(()=>{if(!document.hidden||Date.now()-PROP.at>30*60000)propLoad()},15*60000);setInterval(propRender,20000)}catch(_eQ){}
+{let _eR=false,_eS="";const _eT=$("rigSetup"),_eU=$("rigSetupBtn"),_eV=_eW=>{_eT.hidden=!_eW;_eU.setAttribute("aria-expanded",String(_eW))};
+  _eU.onclick=()=>{_eR=true;_eV(_eT.hidden)};
+  const _eX=()=>{const _eY=String(!!rig.port)+"|"+mode;if(_eY===_eS)return;_eS=_eY;if(!_eR||(rig.port&&mode==="mic")){_eR=false;_eV(!(rig.port&&mode==="mic"))}};
+  try{_eX()}catch(_eZ){_eV(true)}setInterval(()=>{try{_eX()}catch(_fa){}},1000)}
+try{$("k7Sync").title=T("I comandi seguono la radio: se giri una manopola sull'apparato, qui si aggiorna in pochi secondi.")}catch(_fb){}
+function sunTimes(_fc,_fd,_fe){   // → [alba, tramonto] in ore UTC (decimali), o null oltre i circoli polari
+  const _ff=Math.PI/180,_fg=Date.UTC(_fe.getUTCFullYear(),0,0),_fh=Math.floor((_fe-_fg)/864e5),_fi=[];
+  for(const _fj of [true,false]){const _fk=_fd/15,_fl=_fh+((_fj?6:18)-_fk)/24,_fm=0.9856*_fl-3.289;let _fn=_fm+1.916*Math.sin(_fm*_ff)+0.020*Math.sin(2*_fm*_ff)+282.634;_fn=(_fn%360+360)%360;
+    let _fo=Math.atan(0.91764*Math.tan(_fn*_ff))/_ff;_fo=(_fo%360+360)%360;_fo+=Math.floor(_fn/90)*90-Math.floor(_fo/90)*90;_fo/=15;
+    const _fp=0.39782*Math.sin(_fn*_ff),_fq=Math.cos(Math.asin(_fp)),_fr=(Math.cos(90.833*_ff)-_fp*Math.sin(_fc*_ff))/(_fq*Math.cos(_fc*_ff));if(_fr>1||_fr<-1)return null;
+    let _fs=_fj?360-Math.acos(_fr)/_ff:Math.acos(_fr)/_ff;_fs/=15;const _ft=_fs+_fo-0.06571*_fl-6.622;_fi.push(((_ft-_fk)%24+24)%24)}
+  return _fi}
+function utcTick(){const _fu=new Date();$("utcNow").textContent=pad2(_fu.getUTCHours())+":"+pad2(_fu.getUTCMinutes());
+  let _fv="";try{const _fw=typeof gridLL==="function"&&gridLL(prefs().grid);if(_fw){const _fx=sunTimes(_fw[0],_fw[1],_fu);if(_fx){const _fy=_fz=>pad2(Math.floor(_fz))+":"+pad2(Math.floor(_fz%1*60));_fv="☀ "+_fy(_fx[0])+" – "+_fy(_fx[1])}}}catch(_fA){}
+  $("sunTimes").textContent=_fv}
+try{utcTick();setTimeout(utcTick,1500);setInterval(utcTick,10000)}catch(_fB){}
 </script>
 <script>
 const CLAPI=window.cwiuCluster||null;

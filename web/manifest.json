@@ -1,9 +1,9 @@
 {
-  "web": "1.12.13",
+  "web": "1.12.14",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.13.html",
-  "size": 610125,
-  "sha256": "f3cf466d436bd2320800aa888f01a8033d71febfb11325556b1f459d2e43d114",
-  "date": "2026-11-11 22:01 UTC",
-  "notes": "Inseguimento: 30 s sulle frequenze vuote (prova a confronto conclusa); The Rigger: l'inseguimento riparte anche se la porta si richiude subito"
+  "file": "cwiu1mvi-1.12.14.html",
+  "size": 610371,
+  "sha256": "288c484f290da79b832185059f3558b32910cd1b467344c7530a0c517e507f81",
+  "date": "2026-11-11 22:30 UTC",
+  "notes": "The Rigger: l'attesa di ricollegamento continua anche dopo un aggiornamento leggero"
 }
