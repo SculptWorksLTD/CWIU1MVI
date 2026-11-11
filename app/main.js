@@ -86,76 +86,116 @@ let rigger = null;
 function riggerClose() {
   if (!rigger) return true;
   const _O = rigger; rigger = null;
+  if (_O.sock) { try { _O.sock.destroy(); } catch {} return true; }
   try { _O.rs.destroy(); } catch {}
   try { fs.closeSync(_O.wfd); } catch {}
   return true;
 }
+const net = require('net');
+function riggerWinEntries() {
+  try {
+    const _P = JSON.parse(fs.readFileSync(path.join(process.env.APPDATA || '', 'TheRigger', 'cat.json'), 'utf8'));
+    return (Array.isArray(_P) ? _P : []).filter((_Q) => _Q && /^[A-Za-z0-9._-]{1,40}$/.test(_Q.id) && /^127\.0\.0\.1:\d{2,5}$/.test(_Q.addr));
+  } catch { return []; }
+}
+function riggerWinAlive(_R) {
+  return new Promise((_S) => {
+    const [_T, _U] = _R.split(':');
+    const _V = net.connect({ host:_T, port: +_U });
+    const _W = (_X) => { try { _V.destroy(); } catch {} _S(_X); };
+    _V.setTimeout(700, () => _W(false));
+    _V.once('connect', () => _W(true));
+    _V.once('error', () => _W(false));
+  });
+}
 function riggerAlive() {
-  return new Promise((_P) => {
-    require('child_process').execFile('ps', ['-axo', 'command='], { timeout: 3000, maxBuffer: 4 << 20 }, (_Q, _R) => {
-      if (_Q) return _P(false);
-      _P(String(_R).split('\n').some((_S) => /(^|\/)the ?rigger[^\/]*$/i.test(_S.trim().split(/\s+-/)[0])));
+  return new Promise((_Y) => {
+    require('child_process').execFile('ps', ['-axo', 'command='], { timeout: 3000, maxBuffer: 4 << 20 }, (_Z, _aa) => {
+      if (_Z) return _Y(false);
+      _Y(String(_aa).split('\n').some((_ab) => /(^|\/)the ?rigger[^\/]*$/i.test(_ab.trim().split(/\s+-/)[0])));
     });
   });
 }
-function riggerLost(_T) {
-  if (rigger !== _T) return;
+function riggerLost(_ac) {
+  if (rigger !== _ac) return;
   riggerClose();
-  if (win && !win.isDestroyed()) win.webContents.send('rigger-closed', _T.name);
+  if (win && !win.isDestroyed()) win.webContents.send('rigger-closed', _ac.name);
 }
 ipcMain.handle('rigger-list', async () => {
-  if (process.platform === 'win32') return [];
+  if (process.platform === 'win32') {
+    const _ad = riggerWinEntries();
+    const _ae = await Promise.all(_ad.map((_af) => riggerWinAlive(_af.addr)));
+    return _ad.filter((_ag, _ah) => _ae[_ah]).map((_ai) => _ai.id).sort();
+  }
   if (!(await riggerAlive())) return [];
-  try { return fs.readdirSync(RIGGER_DIR).filter((_U) => /^[A-Za-z0-9._-]{1,40}$/.test(_U)).sort(); } catch { return []; }
+  try { return fs.readdirSync(RIGGER_DIR).filter((_aj) => /^[A-Za-z0-9._-]{1,40}$/.test(_aj)).sort(); } catch { return []; }
 });
-ipcMain.handle('rigger-open', async (_V, _W) => {
+ipcMain.handle('rigger-open', async (_ak, _al) => {
   riggerClose();
+  if (process.platform === 'win32') {
+    const _am = riggerWinEntries().find((_an) => _an.id === _al);
+    if (!_am) return false;
+    const [_ao, _ap] = _am.addr.split(':');
+    return await new Promise((_aq) => {
+      const _ar = net.connect({ host:_ao, port: +_ap });
+      const _as = { sock:_ar, name:_al };
+      _ar.setNoDelay(true);
+      _ar.once('connect', () => { rigger = _as; _aq(true); });
+      _ar.on('data', (_at) => { if (rigger === _as && win && !win.isDestroyed()) win.webContents.send('rigger-data', new Uint8Array(_at)); });
+      _ar.on('error', () => { if (rigger !== _as) _aq(false); riggerLost(_as); });
+      _ar.on('close', () => riggerLost(_as));
+    });
+  }
   if (process.platform !== 'win32' && !(await riggerAlive())) return false;
-  if (process.platform === 'win32' || typeof _W !== 'string' || !/^[A-Za-z0-9._-]{1,40}$/.test(_W)) return false;
+  if (process.platform === 'win32' || typeof _al !== 'string' || !/^[A-Za-z0-9._-]{1,40}$/.test(_al)) return false;
   try {
-    const _X = fs.realpathSync(path.join(RIGGER_DIR, _W));
-    if (!/^\/dev\/(ttys\d+|pts\/\d+)$/.test(_X)) return false;
-    const _Y = fs.constants.O_RDWR | fs.constants.O_NOCTTY | fs.constants.O_NONBLOCK;
-    const _Z = fs.openSync(_X, _Y), _aa = fs.openSync(_X, _Y);
-    const _ab = new tty.ReadStream(_Z);
-    const _ac = { rs:_ab, wfd:_aa, name:_W };
-    _ab.on('data', (_ad) => { if (rigger === _ac && win && !win.isDestroyed()) win.webContents.send('rigger-data', new Uint8Array(_ad)); });
-    for (const _ae of ['error', 'end', 'close']) _ab.on(_ae, () => riggerLost(_ac));
-    rigger = _ac;
+    const _au = fs.realpathSync(path.join(RIGGER_DIR, _al));
+    if (!/^\/dev\/(ttys\d+|pts\/\d+)$/.test(_au)) return false;
+    const _av = fs.constants.O_RDWR | fs.constants.O_NOCTTY | fs.constants.O_NONBLOCK;
+    const _aw = fs.openSync(_au, _av), _ax = fs.openSync(_au, _av);
+    const _ay = new tty.ReadStream(_aw);
+    const _az = { rs:_ay, wfd:_ax, name:_al };
+    _ay.on('data', (_aA) => { if (rigger === _az && win && !win.isDestroyed()) win.webContents.send('rigger-data', new Uint8Array(_aA)); });
+    for (const _aB of ['error', 'end', 'close']) _ay.on(_aB, () => riggerLost(_az));
+    rigger = _az;
     return true;
   } catch { return false; }
 });
-ipcMain.handle('rigger-write', (_af, _ag) => new Promise((_ah) => {
-  if (!rigger || !(_ag instanceof Uint8Array)) return _ah(false);
-  const _ai = rigger;
-  fs.write(_ai.wfd, Buffer.from(_ag.buffer, _ag.byteOffset, _ag.byteLength), (_aj) => {
-    if (_aj && _aj.code !== 'EAGAIN') riggerLost(_ai);
-    _ah(!_aj);
+ipcMain.handle('rigger-write', (_aC, _aD) => new Promise((_aE) => {
+  if (!rigger || !(_aD instanceof Uint8Array)) return _aE(false);
+  const _aF = rigger;
+  if (_aF.sock) {
+    _aF.sock.write(Buffer.from(_aD.buffer, _aD.byteOffset, _aD.byteLength), (_aG) => { if (_aG) riggerLost(_aF); _aE(!_aG); });
+    return;
+  }
+  fs.write(_aF.wfd, Buffer.from(_aD.buffer, _aD.byteOffset, _aD.byteLength), (_aH) => {
+    if (_aH && _aH.code !== 'EAGAIN') riggerLost(_aF);
+    _aE(!_aH);
   });
 }));
 ipcMain.handle('rigger-close', () => riggerClose());
-ipcMain.handle('hq-set', (_ak, _al) => { const _am = String((_al && _al.user) || '').toUpperCase().replace(/[^A-Z0-9/]/g, '').slice(0, 15); const _an = _al && typeof _al.pass === 'string' ? _al.pass.slice(0, 100) : undefined; hamqth.saveCred(_am, _an); return hamqth.status(); });
+ipcMain.handle('hq-set', (_aI, _aJ) => { const _aK = String((_aJ && _aJ.user) || '').toUpperCase().replace(/[^A-Z0-9/]/g, '').slice(0, 15); const _aL = _aJ && typeof _aJ.pass === 'string' ? _aJ.pass.slice(0, 100) : undefined; hamqth.saveCred(_aK, _aL); return hamqth.status(); });
 ipcMain.handle('hq-status', () => hamqth.status());
 ipcMain.handle('hq-test', () => hamqth.test());
-ipcMain.handle('hq-lookup', async (_ao, _ap) => { try { return await hamqth.lookup(_ap); } catch (_aq) { return { ok: false, error: String(_aq.message || _aq) }; } });
-ipcMain.handle('hq-upload', async (_ar, _as) => { try { if (typeof _as !== 'string' || _as.length > 4000) return { ok: false, error: 'adif' }; return await hamqth.upload(_as); } catch (_at) { return { ok: false, error: String(_at.message || _at) }; } });
+ipcMain.handle('hq-lookup', async (_aM, _aN) => { try { return await hamqth.lookup(_aN); } catch (_aO) { return { ok: false, error: String(_aO.message || _aO) }; } });
+ipcMain.handle('hq-upload', async (_aP, _aQ) => { try { if (typeof _aQ !== 'string' || _aQ.length > 4000) return { ok: false, error: 'adif' }; return await hamqth.upload(_aQ); } catch (_aR) { return { ok: false, error: String(_aR.message || _aR) }; } });
 ipcMain.handle('app-info', () => updater.info());
 ipcMain.handle('upd-check', async () => {
-  try { upd = await updater.check(); return upd; } catch (_au) { return { available: false, error: String(_au.message || _au) }; }
+  try { upd = await updater.check(); return upd; } catch (_aS) { return { available: false, error: String(_aS.message || _aS) }; }
 });
-ipcMain.handle('upd-install', async (_av) => {
+ipcMain.handle('upd-install', async (_aT) => {
   if (!upd || !upd.available) return { ok: false, error: 'no update' };
   try {
-    const _aw = (_ax) => { if (!_av.sender.isDestroyed()) _av.sender.send('upd-progress', _ax); };
+    const _aU = (_aV) => { if (!_aT.sender.isDestroyed()) _aT.sender.send('upd-progress', _aV); };
     if (upd.kind === 'web') {
-      const _ay = await updater.installWeb(upd, _aw);
+      const _aW = await updater.installWeb(upd, _aU);
       upd = null;
-      setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(_ay, { query: { updated: '1' } }); }, 900);
+      setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(_aW, { query: { updated: '1' } }); }, 900);
       return { ok: true, reload: true };
     }
-    await updater.install(upd, _aw);
+    await updater.install(upd, _aU);
     return { ok: true };
-  } catch (_az) { return { ok: false, error: String(_az.message || _az) }; }
+  } catch (_aX) { return { ok: false, error: String(_aX.message || _aX) }; }
 });
 ipcMain.on('upd-cancel', () => updater.cancel());
 const isMac = process.platform === 'darwin';
@@ -174,12 +214,12 @@ function openWindow() {
   });
   win.loadFile(updater.pagePath());
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
-  win.webContents.setWindowOpenHandler(({ url:_aA }) => {
-    if (/^https?:/i.test(_aA)) shell.openExternal(_aA);
+  win.webContents.setWindowOpenHandler(({ url:_aY }) => {
+    if (/^https?:/i.test(_aY)) shell.openExternal(_aY);
     return { action: 'deny' };
   });
-  win.webContents.on('will-navigate', (_aB, _aC) => {
-    if (!_aC.startsWith('file:')) { _aB.preventDefault(); shell.openExternal(_aC); }
+  win.webContents.on('will-navigate', (_aZ, _ba) => {
+    if (!_ba.startsWith('file:')) { _aZ.preventDefault(); shell.openExternal(_ba); }
   });
   win.on('closed', () => { riggerClose(); win = null; });
   win.webContents.on('did-finish-load', () => { buildMenu(); setTimeout(rescueCheck, 15000); });
@@ -187,63 +227,63 @@ function openWindow() {
 let rescued = false;
 async function rescueCheck() {
   if (rescued || !win || win.isDestroyed()) return;
-  let _aD = false;
-  try { _aD = await win.webContents.executeJavaScript('window.__pageOk===true', true); } catch {}
-  if (_aD) return;
+  let _bb = false;
+  try { _bb = await win.webContents.executeJavaScript('window.__pageOk===true', true); } catch {}
+  if (_bb) return;
   rescued = true;
   try { upd = await updater.check(); } catch { return; }
   if (!upd || !upd.available) return;
-  const _aE = await dialog.showMessageBox(win, { type: 'info', buttons: [L('rescueInstall'), L('cancel')], defaultId: 0, cancelId: 1, title: 'CWIU1MVI', message: L('rescueMsg').replace('{0}', upd.version || upd.web || '') });
-  if (_aE.response !== 0) return;
+  const _bc = await dialog.showMessageBox(win, { type: 'info', buttons: [L('rescueInstall'), L('cancel')], defaultId: 0, cancelId: 1, title: 'CWIU1MVI', message: L('rescueMsg').replace('{0}', upd.version || upd.web || '') });
+  if (_bc.response !== 0) return;
   try {
-    if (upd.kind === 'web') { const _aF = await updater.installWeb(upd, () => {}); upd = null; win.loadFile(_aF, { query: { updated: '1' } }); }
+    if (upd.kind === 'web') { const _bd = await updater.installWeb(upd, () => {}); upd = null; win.loadFile(_bd, { query: { updated: '1' } }); }
     else await updater.install(upd, () => {});
-  } catch (_aG) { dialog.showMessageBox(win, { type: 'warning', message: String(_aG.message || _aG) }); }
+  } catch (_be) { dialog.showMessageBox(win, { type: 'warning', message: String(_be.message || _be) }); }
 }
-function score(_aH) {
-  const _aI = `${_aH.displayName || ''} ${_aH.portName || ''}`.toLowerCase();
-  if (/cp210|silicon labs|icom/.test(_aI)) return 2;
-  if (/usb/.test(_aI)) return 1;
+function score(_bf) {
+  const _bg = `${_bf.displayName || ''} ${_bf.portName || ''}`.toLowerCase();
+  if (/cp210|silicon labs|icom/.test(_bg)) return 2;
+  if (/usb/.test(_bg)) return 1;
   return 0;
 }
-function setupPermissions(_aJ) {
-  _aJ.on('select-serial-port', async (_aK, _aL, _aM, _aN) => {
-    _aK.preventDefault();
-    const _aO = BrowserWindow.fromWebContents(_aM) || undefined;
-    if (!_aL || _aL.length === 0) {
-      await dialog.showMessageBox(_aO, {
+function setupPermissions(_bh) {
+  _bh.on('select-serial-port', async (_bi, _bj, _bk, _bl) => {
+    _bi.preventDefault();
+    const _bm = BrowserWindow.fromWebContents(_bk) || undefined;
+    if (!_bj || _bj.length === 0) {
+      await dialog.showMessageBox(_bm, {
         type: 'warning',
         title: L('noPortTitle'),
         message: L('noPortMsg'),
         detail: L('noPortDetail'),
       });
-      _aN('');
+      _bl('');
       return;
     }
-    let _aP = '';
-    try { _aP = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'last-port.json'), 'utf8')).name || ''; } catch { _aP = ''; }
-    const _aQ = [..._aL].sort((_aR, _aS) => ((_aS.portName === _aP) - (_aR.portName === _aP)) || (score(_aS) - score(_aR)));
-    const _aT = _aQ.map((_aU) => {
-      const _aV = _aU.displayName || _aU.portName || L('serialPort');
-      const _aW = _aU.portName && _aU.portName !== _aV ? `${_aV} (${_aU.portName})` : _aV;
-      return _aU.portName && _aU.portName === _aP ? _aW + ' · ' + L('lastUsed') : _aW;
+    let _bn = '';
+    try { _bn = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'last-port.json'), 'utf8')).name || ''; } catch { _bn = ''; }
+    const _bo = [..._bj].sort((_bp, _bq) => ((_bq.portName === _bn) - (_bp.portName === _bn)) || (score(_bq) - score(_bp)));
+    const _br = _bo.map((_bs) => {
+      const _bt = _bs.displayName || _bs.portName || L('serialPort');
+      const _bu = _bs.portName && _bs.portName !== _bt ? `${_bt} (${_bs.portName})` : _bt;
+      return _bs.portName && _bs.portName === _bn ? _bu + ' · ' + L('lastUsed') : _bu;
     });
-    const { response:_aX } = await dialog.showMessageBox(_aO, {
+    const { response:_bv } = await dialog.showMessageBox(_bm, {
       type: 'question',
       title: L('portTitle'),
       message: L('portMsg'),
       detail: L('portDetail'),
-      buttons: [..._aT, L('cancel')],
-      cancelId: _aT.length,
+      buttons: [..._br, L('cancel')],
+      cancelId: _br.length,
       defaultId: 0,
       noLink: true,
     });
-    if (_aX < _aQ.length) { try { fs.writeFileSync(path.join(app.getPath('userData'), 'last-port.json'), JSON.stringify({ name: _aQ[_aX].portName || '' })); } catch {} }
-    _aN(_aX < _aQ.length ? _aQ[_aX].portId : '');
+    if (_bv < _bo.length) { try { fs.writeFileSync(path.join(app.getPath('userData'), 'last-port.json'), JSON.stringify({ name: _bo[_bv].portName || '' })); } catch {} }
+    _bl(_bv < _bo.length ? _bo[_bv].portId : '');
   });
-  _aJ.setPermissionCheckHandler((_aY, _aZ) => ['serial', 'media', 'clipboard-sanitized-write'].includes(_aZ));
-  _aJ.setPermissionRequestHandler((_ba, _bb, _bc) => _bc(['media', 'clipboard-sanitized-write'].includes(_bb)));
-  _aJ.setDevicePermissionHandler((_bd) => _bd.deviceType === 'serial');
+  _bh.setPermissionCheckHandler((_bw, _bx) => ['serial', 'media', 'clipboard-sanitized-write'].includes(_bx));
+  _bh.setPermissionRequestHandler((_by, _bz, _bA) => _bA(['media', 'clipboard-sanitized-write'].includes(_bz)));
+  _bh.setDevicePermissionHandler((_bB) => _bB.deviceType === 'serial');
 }
 const LANGS = [['it', 'Italiano'], ['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['ja', '日本語']];
 const MT = {
@@ -359,33 +399,33 @@ function initLang() {
   try { LANG = JSON.parse(fs.readFileSync(langFile(), 'utf8')).lang; } catch { LANG = (app.getLocale() || 'it').slice(0, 2); }
   if (!MT[LANG]) LANG = 'en';
 }
-const L = (_be) => (MT[LANG] && MT[LANG][_be]) || MT.it[_be] || _be;
-ipcMain.on('set-lang', (_bf, _bg) => {
-  if (!MT[_bg] || _bg === LANG) return;
-  LANG = _bg; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_bg })); } catch {}
+const L = (_bC) => (MT[LANG] && MT[LANG][_bC]) || MT.it[_bC] || _bC;
+ipcMain.on('set-lang', (_bD, _bE) => {
+  if (!MT[_bE] || _bE === LANG) return;
+  LANG = _bE; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_bE })); } catch {}
   buildMenu();
 });
 let ui = { listening: false, cat: false, cwOk: false, locked: false, shown: {}, style: 'campo', hunting: false, rec: false };
-const send = (_bh) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _bh); } };
-const clickIn = (_bi) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_bi)}).click()`, true).catch(() => {}); } };
+const send = (_bF) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _bF); } };
+const clickIn = (_bG) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_bG)}).click()`, true).catch(() => {}); } };
 const PANELS = ['log', 'tune', 'rig', 'c7100'];
 const STYLES = ['campo', 'notte', 'valvole', 'chiaro', 'fosfori', 'contrasto'];
 const BANDS = ['160', '80', '60', '40', '30', '20', '17', '15', '12', '10', '6', '2', '70cm'];
 let awakeId = -1;
-function keepAwake(_bj) {
-  if (_bj && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
-  else if (!_bj && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
+function keepAwake(_bH) {
+  if (_bH && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
+  else if (!_bH && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
 }
-ipcMain.on('app-state', (_bk, _bl) => { if (_bl && typeof _bl === 'object') { ui = { ...ui, ..._bl }; keepAwake(!!ui.listening); buildMenu(); } });
+ipcMain.on('app-state', (_bI, _bJ) => { if (_bJ && typeof _bJ === 'object') { ui = { ...ui, ..._bJ }; keepAwake(!!ui.listening); buildMenu(); } });
 function buildMenu() {
-  const _bm = { label: L('about'), click: () => send('welcome') };
-  const _bn = { label: L('checkUpd'), click: () => send('update') };
-  const _bo = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
-  const _bp = [
+  const _bK = { label: L('about'), click: () => send('welcome') };
+  const _bL = { label: L('checkUpd'), click: () => send('update') };
+  const _bM = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
+  const _bN = [
     ...(isMac ? [{
       label: 'CWIU1MVI',
       submenu: [
-        _bm, _bn, { type: 'separator' }, _bo,
+        _bK, _bL, { type: 'separator' }, _bM,
         { type: 'separator' },
         { role: 'services', label: L('services') },
         { type: 'separator' },
@@ -402,7 +442,7 @@ function buildMenu() {
         { label: L('exportAdif'), accelerator: 'CmdOrCtrl+E', click: () => send('adif') },
         { label: L('openLog'), accelerator: 'CmdOrCtrl+Shift+O', click: () => send('logs') },
         { type: 'separator' },
-        ...(isMac ? [] : [_bo, { type: 'separator' }]),
+        ...(isMac ? [] : [_bM, { type: 'separator' }]),
         isMac ? { role: 'close', label: L('closeWin') } : { role: 'quit', label: L('quit') },
       ],
     },
@@ -426,7 +466,7 @@ function buildMenu() {
         { label: L('scan'), enabled: !!ui.cat && !!ui.listening, click: () => send('scan') },
         { label: L('hunt'), type: 'checkbox', checked: !!ui.hunting, accelerator: 'CmdOrCtrl+Shift+F', enabled: !!ui.cat && !!ui.listening, click: () => send('hunt') },
         { label: L('chase'), type: 'checkbox', checked: !!ui.chasing, accelerator: 'CmdOrCtrl+Shift+S', enabled: !!ui.cat && !!ui.listening, click: () => send('chase') },
-        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_bq) => ({ label: /cm/.test(_bq) ? _bq.replace('cm', ' cm') : `${_bq} m`, click: () => send('band:' + _bq) })) },
+        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_bO) => ({ label: /cm/.test(_bO) ? _bO.replace('cm', ' cm') : `${_bO} m`, click: () => send('band:' + _bO) })) },
         { type: 'separator' },
         { label: ui.rec ? L('recStop') : L('rec'), accelerator: 'CmdOrCtrl+Shift+R', enabled: !!ui.listening || !!ui.rec, click: () => send('rec') },
       ],
@@ -438,10 +478,10 @@ function buildMenu() {
         { label: L('vSta'), accelerator: 'CmdOrCtrl+2', click: () => send('view:sta') },
         { label: 'Cluster', accelerator: 'CmdOrCtrl+3', click: () => send('view:cl') },
         { type: 'separator' },
-        { label: L('style'), submenu: STYLES.map((_br) => ({ label: L('st_' + _br), type: 'radio', checked: ui.style === _br, click: () => send('style:' + _br) })) },
-        { label: L('language'), submenu: LANGS.map(([_bs, _bt]) => ({ label: _bt, type: 'radio', checked: LANG === _bs, click: () => send('lang:' + _bs) })) },
+        { label: L('style'), submenu: STYLES.map((_bP) => ({ label: L('st_' + _bP), type: 'radio', checked: ui.style === _bP, click: () => send('style:' + _bP) })) },
+        { label: L('language'), submenu: LANGS.map(([_bQ, _bR]) => ({ label: _bR, type: 'radio', checked: LANG === _bQ, click: () => send('lang:' + _bQ) })) },
         { type: 'separator' },
-        ...PANELS.map((_bu) => ({ label: L('p_' + _bu), type: 'checkbox', checked: ui.shown[_bu] !== false, click: () => send('mod:' + _bu) })),
+        ...PANELS.map((_bS) => ({ label: L('p_' + _bS), type: 'checkbox', checked: ui.shown[_bS] !== false, click: () => send('mod:' + _bS) })),
         { type: 'separator' },
         { label: L('lock'), type: 'checkbox', checked: !!ui.locked, click: () => send('lock') },
         { label: L('resetLayout'), click: () => send('reset') },
@@ -463,7 +503,7 @@ function buildMenu() {
       role: 'help',
       label: L('help'),
       submenu: [
-        ...(isMac ? [] : [_bm, _bn, { type: 'separator' }]),
+        ...(isMac ? [] : [_bK, _bL, { type: 'separator' }]),
         { label: L('guide'), accelerator: 'F1', click: () => send('guide') },
         { label: L('cfg7100'), click: () => send('guide:ic7100') },
         { label: L('cfg7300'), click: () => send('guide:ic7300') },
@@ -475,7 +515,7 @@ function buildMenu() {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(_bp));
+  Menu.setApplicationMenu(Menu.buildFromTemplate(_bN));
 }
 app.whenReady().then(async () => {
   initLang();
@@ -484,7 +524,7 @@ app.whenReady().then(async () => {
   openWindow();
   app.on('activate', openWindow);
   if (isMac) {
-    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_bv) { /* si può concedere dopo */ }
+    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_bT) { /* si può concedere dopo */ }
   }
 });
 app.on('window-all-closed', () => app.quit());
