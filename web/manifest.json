@@ -1,9 +1,9 @@
 {
-  "web": "1.12.4",
+  "web": "1.12.5",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.4.html",
-  "size": 599484,
-  "sha256": "12f2d4496ea114e069efbd7f69b45a55734ca3d0b6ea19254783dd0e316f9175",
-  "date": "2026-11-11 13:00 UTC",
-  "notes": "Inseguimento: prova a confronto sui tempi di attesa"
+  "file": "cwiu1mvi-1.12.5.html",
+  "size": 606617,
+  "sha256": "89aee1ff8749ad3896d063d99f86302e180aef377ab529a2537d9610b7f5c113",
+  "date": "2026-11-11 13:13 UTC",
+  "notes": "Collegamento alla radio attraverso The Rigger (Mac e Linux, con app 1.2.7); messaggio più chiaro se la radio è occupata"
 }

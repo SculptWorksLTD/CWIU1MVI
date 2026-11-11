@@ -28,10 +28,17 @@ contextBridge.exposeInMainWorld('cwiuApp', {
     onProgress: (_z) => ipcRenderer.on('upd-progress', (_A, _B) => _z(+_B)),
   },
 });
+contextBridge.exposeInMainWorld('cwiuRigger', {
+  list: () => ipcRenderer.invoke('rigger-list'),
+  open: (_C) => ipcRenderer.invoke('rigger-open', _C),
+  write: (_D) => ipcRenderer.invoke('rigger-write', _D),
+  close: () => ipcRenderer.invoke('rigger-close'),
+  onData: (_E) => ipcRenderer.on('rigger-data', (_F, _G) => _E(_G)),
+});
 contextBridge.exposeInMainWorld('cwiuHamqth', {
-  set: (_C, _D) => ipcRenderer.invoke('hq-set', { user:_C, pass:_D }),
+  set: (_H, _I) => ipcRenderer.invoke('hq-set', { user:_H, pass:_I }),
   status: () => ipcRenderer.invoke('hq-status'),
   test: () => ipcRenderer.invoke('hq-test'),
-  lookup: (_E) => ipcRenderer.invoke('hq-lookup', _E),
-  upload: (_F) => ipcRenderer.invoke('hq-upload', _F),
+  lookup: (_J) => ipcRenderer.invoke('hq-lookup', _J),
+  upload: (_K) => ipcRenderer.invoke('hq-upload', _K),
 });
