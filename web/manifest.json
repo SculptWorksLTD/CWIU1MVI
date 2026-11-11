@@ -1,9 +1,9 @@
 {
-  "web": "1.12.6",
+  "web": "1.12.7",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.6.html",
-  "size": 606688,
-  "sha256": "8279a9b639c2f8fdd3d2df33feae52395e2566f38f67c44f9329162f888ec62a",
-  "date": "2026-11-11 13:45 UTC",
-  "notes": "Con The Rigger la radio viene riconosciuta giusta (prima compariva IC-905)"
+  "file": "cwiu1mvi-1.12.7.html",
+  "size": 606583,
+  "sha256": "ff46d4159e4e8c66976f9ffc008b89e01ac78fce5a0d537371f4f963f96157ba",
+  "date": "2026-11-11 13:54 UTC",
+  "notes": "Il menu Collegamento compare solo quando The Rigger è attivo"
 }
