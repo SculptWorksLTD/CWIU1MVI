@@ -1,9 +1,9 @@
 {
-  "web": "1.12.7",
+  "web": "1.12.8",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.7.html",
-  "size": 606583,
-  "sha256": "ff46d4159e4e8c66976f9ffc008b89e01ac78fce5a0d537371f4f963f96157ba",
-  "date": "2026-11-11 13:54 UTC",
-  "notes": "Il menu Collegamento compare solo quando The Rigger è attivo"
+  "file": "cwiu1mvi-1.12.8.html",
+  "size": 606598,
+  "sha256": "f97b7b585670871067ccbfffa1aea938fc4d414e09986475e8f5a852129045aa",
+  "date": "2026-11-11 14:30 UTC",
+  "notes": "All'avvio ascolto, CAT e inseguimento restano spenti (si possono far partire da soli nelle Preferenze)"
 }

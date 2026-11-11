@@ -3930,7 +3930,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.7";
+const WEB_VERSION="1.12.8";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4089,8 +4089,8 @@ $("welcome").addEventListener("close",()=>{if(!updChecked){updChecked=true;setTi
       if(_bW.cat&&catViaRigger()){try{await catViaFill();await catConnect()}catch(_bZ){}}
       else if(_bW.cat&&navigator.serial&&navigator.serial.getPorts){try{const _ca=await navigator.serial.getPorts();let _cb=-1;try{_cb=+localStorage.getItem("cwiu-cat-port")}catch(_cc){}const _cd=_ca.length===1?_ca[0]:_ca[_cb];if(_cd)await catConnect(_cd)}catch(_ce){}}
       if(_bW.chase)setTimeout(()=>{try{if(!chase.on)chaseStart()}catch(_cf){}},3000)},700);
-  // avvio normale: se richiesto nelle preferenze, radio, ascolto e inseguimento partono da soli (niente clic)
-  else{const _cg=prefs();if(_cg.autoStart!==false)setTimeout(async()=>{
+  // avvio normale: tutto spento (CAT, ascolto, inseguimento) finché non si preme; parte da solo solo se lo si sceglie nelle Preferenze
+  else{const _cg=prefs();if(_cg.autoOn===true)setTimeout(async()=>{
       try{await catViaFill()}catch(_ch){}
       if(catViaRigger()){try{if(!rig.port)await catConnect()}catch(_ci){}}
       else if(navigator.serial&&navigator.serial.getPorts){try{const _cj=await navigator.serial.getPorts();let _ck=-1;try{_ck=+localStorage.getItem("cwiu-cat-port")}catch(_cl){}const _cm=_cj.length===1?_cj[0]:_cj[_ck];if(_cm&&!rig.port)await catConnect(_cm)}catch(_cn){}}
@@ -4111,7 +4111,7 @@ function openPrefs(){
   $("pCall").value=_ct.call||"";
   {const _cD={...QSO_TPL.normal,...(_ct.tplN||{})},_cE={...QSO_TPL.contest,...(_ct.tplC||{})};for(const _cF of TXK){$("tpl_"+_cF).value=_cD[_cF];$("tplc_"+_cF).value=_cE[_cF]}}
   $("pName").value=_ct.opName||"";$("pXch").value=_ct.xch||"";$("pGrid").value=_ct.grid||"";$("pUpd").checked=_ct.upd!==false;
-  let _cG=false;try{_cG=localStorage.getItem("cwiu-welcome-hide")==="1"}catch(_cH){}$("pWelcome").checked=!_cG;$("pAuto").checked=_ct.autoStart!==false;hqPrefs();$("pCallAlert").checked=_ct.callAlert!==false;$("pAutoChase").checked=_ct.autoChase!==false;
+  let _cG=false;try{_cG=localStorage.getItem("cwiu-welcome-hide")==="1"}catch(_cH){}$("pWelcome").checked=!_cG;$("pAuto").checked=_ct.autoOn===true;hqPrefs();$("pCallAlert").checked=_ct.callAlert!==false;$("pAutoChase").checked=_ct.autoChase!==false;
   $("pDir").textContent=T("solo nell'app per Mac e Windows");$("pDirBtn").hidden=!window.cwiuLog;
   if(window.cwiuLog)window.cwiuLog.folder().then(_cI=>$("pDir").textContent=_cI).catch(()=>{});
   if(!_cs.open){try{_cs.showModal()}catch(_cJ){_cs.setAttribute("open","")}}
@@ -4137,7 +4137,7 @@ $("pHqSave").onclick=async()=>{const _df=window.cwiuHamqth;if(!_df)return;const 
   const _di=await _df.test();$("pHqState").textContent=_di&&_di.ok?T("collegato a HamQTH ✓"):T("accesso non riuscito: {0}",(_di&&_di.error)||"?")};
 $("pHqLookup").onchange=()=>{const _dj=prefs();_dj.hqLookup=$("pHqLookup").checked;savePrefs(_dj)};
 $("pHqUp").onchange=()=>{const _dk=prefs();_dk.hqUpload=$("pHqUp").checked;savePrefs(_dk)};
-$("pAuto").onchange=()=>{const _dl=prefs();_dl.autoStart=$("pAuto").checked;savePrefs(_dl)};
+$("pAuto").onchange=()=>{const _dl=prefs();_dl.autoOn=$("pAuto").checked;savePrefs(_dl)};
 $("pAutoChase").onchange=()=>{const _dm=prefs();_dm.autoChase=$("pAutoChase").checked;savePrefs(_dm)};
 $("pWelcome").onchange=()=>{try{localStorage.setItem("cwiu-welcome-hide",$("pWelcome").checked?"0":"1")}catch(_dn){}};
 $("pDirBtn").onclick=()=>window.cwiuLog&&window.cwiuLog.openFolder();
