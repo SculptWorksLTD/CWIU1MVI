@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, session, shell, systemPreferences, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, session, shell, systemPreferences, ipcMain, powerSaveBlocker } = require('electron');
 if (process.platform === 'darwin') app.commandLine.appendSwitch('use-mock-keychain');
 const path = require('path');
 const fs = require('fs');
@@ -161,7 +161,7 @@ function openWindow() {
     title: 'CWIU1MVI',
     backgroundColor: '#2a2e25',
     show: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, preload: path.join(__dirname, 'preload.js') },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') },
   });
   win.loadFile(updater.pagePath());
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
@@ -362,16 +362,21 @@ const clickIn = (_bf) => { if (win && !win.isDestroyed()) { win.show(); win.webC
 const PANELS = ['log', 'tune', 'rig', 'c7100'];
 const STYLES = ['campo', 'notte', 'valvole', 'chiaro', 'fosfori', 'contrasto'];
 const BANDS = ['160', '80', '60', '40', '30', '20', '17', '15', '12', '10', '6', '2', '70cm'];
-ipcMain.on('app-state', (_bg, _bh) => { if (_bh && typeof _bh === 'object') { ui = { ...ui, ..._bh }; buildMenu(); } });
+let awakeId = -1;
+function keepAwake(_bg) {
+  if (_bg && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
+  else if (!_bg && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
+}
+ipcMain.on('app-state', (_bh, _bi) => { if (_bi && typeof _bi === 'object') { ui = { ...ui, ..._bi }; keepAwake(!!ui.listening); buildMenu(); } });
 function buildMenu() {
-  const _bi = { label: L('about'), click: () => send('welcome') };
-  const _bj = { label: L('checkUpd'), click: () => send('update') };
-  const _bk = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
-  const _bl = [
+  const _bj = { label: L('about'), click: () => send('welcome') };
+  const _bk = { label: L('checkUpd'), click: () => send('update') };
+  const _bl = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
+  const _bm = [
     ...(isMac ? [{
       label: 'CWIU1MVI',
       submenu: [
-        _bi, _bj, { type: 'separator' }, _bk,
+        _bj, _bk, { type: 'separator' }, _bl,
         { type: 'separator' },
         { role: 'services', label: L('services') },
         { type: 'separator' },
@@ -388,7 +393,7 @@ function buildMenu() {
         { label: L('exportAdif'), accelerator: 'CmdOrCtrl+E', click: () => send('adif') },
         { label: L('openLog'), accelerator: 'CmdOrCtrl+Shift+O', click: () => send('logs') },
         { type: 'separator' },
-        ...(isMac ? [] : [_bk, { type: 'separator' }]),
+        ...(isMac ? [] : [_bl, { type: 'separator' }]),
         isMac ? { role: 'close', label: L('closeWin') } : { role: 'quit', label: L('quit') },
       ],
     },
@@ -412,7 +417,7 @@ function buildMenu() {
         { label: L('scan'), enabled: !!ui.cat && !!ui.listening, click: () => send('scan') },
         { label: L('hunt'), type: 'checkbox', checked: !!ui.hunting, accelerator: 'CmdOrCtrl+Shift+F', enabled: !!ui.cat && !!ui.listening, click: () => send('hunt') },
         { label: L('chase'), type: 'checkbox', checked: !!ui.chasing, accelerator: 'CmdOrCtrl+Shift+S', enabled: !!ui.cat && !!ui.listening, click: () => send('chase') },
-        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_bm) => ({ label: /cm/.test(_bm) ? _bm.replace('cm', ' cm') : `${_bm} m`, click: () => send('band:' + _bm) })) },
+        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_bn) => ({ label: /cm/.test(_bn) ? _bn.replace('cm', ' cm') : `${_bn} m`, click: () => send('band:' + _bn) })) },
         { type: 'separator' },
         { label: ui.rec ? L('recStop') : L('rec'), accelerator: 'CmdOrCtrl+Shift+R', enabled: !!ui.listening || !!ui.rec, click: () => send('rec') },
       ],
@@ -424,10 +429,10 @@ function buildMenu() {
         { label: L('vSta'), accelerator: 'CmdOrCtrl+2', click: () => send('view:sta') },
         { label: 'Cluster', accelerator: 'CmdOrCtrl+3', click: () => send('view:cl') },
         { type: 'separator' },
-        { label: L('style'), submenu: STYLES.map((_bn) => ({ label: L('st_' + _bn), type: 'radio', checked: ui.style === _bn, click: () => send('style:' + _bn) })) },
-        { label: L('language'), submenu: LANGS.map(([_bo, _bp]) => ({ label: _bp, type: 'radio', checked: LANG === _bo, click: () => send('lang:' + _bo) })) },
+        { label: L('style'), submenu: STYLES.map((_bo) => ({ label: L('st_' + _bo), type: 'radio', checked: ui.style === _bo, click: () => send('style:' + _bo) })) },
+        { label: L('language'), submenu: LANGS.map(([_bp, _bq]) => ({ label: _bq, type: 'radio', checked: LANG === _bp, click: () => send('lang:' + _bp) })) },
         { type: 'separator' },
-        ...PANELS.map((_bq) => ({ label: L('p_' + _bq), type: 'checkbox', checked: ui.shown[_bq] !== false, click: () => send('mod:' + _bq) })),
+        ...PANELS.map((_br) => ({ label: L('p_' + _br), type: 'checkbox', checked: ui.shown[_br] !== false, click: () => send('mod:' + _br) })),
         { type: 'separator' },
         { label: L('lock'), type: 'checkbox', checked: !!ui.locked, click: () => send('lock') },
         { label: L('resetLayout'), click: () => send('reset') },
@@ -449,7 +454,7 @@ function buildMenu() {
       role: 'help',
       label: L('help'),
       submenu: [
-        ...(isMac ? [] : [_bi, _bj, { type: 'separator' }]),
+        ...(isMac ? [] : [_bj, _bk, { type: 'separator' }]),
         { label: L('guide'), accelerator: 'F1', click: () => send('guide') },
         { label: L('cfg7100'), click: () => send('guide:ic7100') },
         { label: L('cfg7300'), click: () => send('guide:ic7300') },
@@ -461,7 +466,7 @@ function buildMenu() {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(_bl));
+  Menu.setApplicationMenu(Menu.buildFromTemplate(_bm));
 }
 app.whenReady().then(async () => {
   initLang();
@@ -470,7 +475,7 @@ app.whenReady().then(async () => {
   openWindow();
   app.on('activate', openWindow);
   if (isMac) {
-    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_br) { /* si può concedere dopo */ }
+    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_bs) { /* si può concedere dopo */ }
   }
 });
 app.on('window-all-closed', () => app.quit());

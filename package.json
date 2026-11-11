@@ -1,7 +1,7 @@
 {
   "name": "cwiu1mvi",
   "productName": "CWIU1MVI",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "Decoder CW per radio con USB: tutte le stazioni in banda, CAT, cluster, QSO con log ADIF. Sviluppato da IU1MVI, uso libero per tutti gli OM.",
   "author": "IU1MVI",
   "license": "SEE LICENSE IN LICENSE",

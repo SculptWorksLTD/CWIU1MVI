@@ -1,9 +1,9 @@
 {
-  "web": "1.12.8",
+  "web": "1.12.9",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.8.html",
-  "size": 606598,
-  "sha256": "f97b7b585670871067ccbfffa1aea938fc4d414e09986475e8f5a852129045aa",
-  "date": "2026-11-11 14:30 UTC",
-  "notes": "All'avvio ascolto, CAT e inseguimento restano spenti (si possono far partire da soli nelle Preferenze)"
+  "file": "cwiu1mvi-1.12.9.html",
+  "size": 607812,
+  "sha256": "27e260a4c9dba06a59da7f9caec955e91a5093ac9b5c1e9e664950af43abc793",
+  "date": "2026-11-11 18:48 UTC",
+  "notes": "Inseguimento e monitoraggio non si fermano più con la finestra coperta; registro degli eventi nella cartella del log"
 }

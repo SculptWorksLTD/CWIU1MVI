@@ -7,6 +7,11 @@ CWIU1MVI: decoder CW per Mac, Windows e Linux. Sviluppato da IU1MVI, uso libero 
 
 Chi ha già CWIU1MVI su Mac o Windows non deve fare niente: si aggiorna da solo all'avvio. Su Linux decoder e interfaccia si aggiornano da soli; per una nuova versione completa si scarica di nuovo il pacchetto da qui.
 
+**1.2.9**
+- Ascolto, monitoraggio e inseguimento continuano anche con la finestra coperta, ridotta a icona o con lo schermo spento: prima il sistema li metteva in pausa.
+- Mentre ascolta, il Mac non va in stop da solo (lo schermo invece può spegnersi).
+- Nella cartella del log un registro degli eventi (eventi-AAAA-MM-GG.csv) dice quando e perché si sono fermati CAT, ascolto e inseguimento.
+
 **1.2.8**
 - Il menu Collegamento compare solo quando The Rigger è davvero in esecuzione, e sparisce quando lo chiudi.
 

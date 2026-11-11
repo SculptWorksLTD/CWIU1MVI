@@ -1741,12 +1741,13 @@ function newDecoder(_j){
   if(typeof skimReset==='function')skimReset();
   const _k=new CWDecoder(_j,{key:_l=>$("lamp").classList.toggle("on",_l)},{sq:SQ});
   if(dec&&!dec.auto)_k.setFreq(dec.freq);
-  _k.onBlock=_m=>{v2AudPush(_m,_k.fs);for(const _n of SK.list)_n.d.push(_m);if(REC.on)recPush(_m);if(CLIP.on)clipPush(_m,_k.fs)};
+  _k.onBlock=_m=>{v2AudPush(_m,_k.fs);for(const _n of SK.list)_n.d.push(_m);if(REC.on)recPush(_m);if(CLIP.on)clipPush(_m,_k.fs);try{bgTick()}catch(_o){}};
   return _k;
 }
 async function stopAll(){
-  try{if(stream)stream.getTracks().forEach(_o=>_o.stop())}catch(_p){}
-  try{if(node)node.disconnect()}catch(_q){}
+  if(mode==="mic")evLog("ascolto fermo","");
+  try{if(stream)stream.getTracks().forEach(_p=>_p.stop())}catch(_q){}
+  try{if(node)node.disconnect()}catch(_r){}
   if(dec)dec.flush();
   if(typeof closeAllMsgs==='function')closeAllMsgs();
   stream=null;node=null;mode="idle";
@@ -1754,123 +1755,123 @@ async function stopAll(){
   $("lamp").classList.remove("on");setState(T("fermo"));
 }
 function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume();return ctx}
-function attach(_r){
-  const _s=ensureCtx();dec=newDecoder(_s.sampleRate);
-  node=_s.createScriptProcessor(2048,2,1);
-  let _t=null;
-  node.onaudioprocess=_u=>{const _v=_u.inputBuffer,_w=$("chan").value,_x=_v.numberOfChannels,_y=inGain;
-    let _z;
-    if(_x===1||_w!=="mix")_z=_v.getChannelData(_x===1?0:+_w);
-    else{const _A=_v.getChannelData(0),_B=_v.getChannelData(1);if(!_t||_t.length!==_A.length)_t=new Float32Array(_A.length);for(let _C=0;_C<_A.length;_C++)_t[_C]=(_A[_C]+_B[_C])*0.5;_z=_t}
-    if(_y!==1){if(!_t||_t.length!==_z.length)_t=new Float32Array(_z.length);for(let _D=0;_D<_z.length;_D++)_t[_D]=_z[_D]*_y;_z=_t}
-    {let _E=0;for(let _F=0;_F<_z.length;_F+=4){const _G=Math.abs(_z[_F]);if(_G>_E)_E=_G}inPeak=Math.max(_E,inPeak*0.9)}
-    dec.push(_z)};
-  const _H=_s.createGain();_H.gain.value=0;
-  _r.connect(node);node.connect(_H);_H.connect(_s.destination);
+function attach(_s){
+  const _t=ensureCtx();dec=newDecoder(_t.sampleRate);
+  node=_t.createScriptProcessor(2048,2,1);
+  let _u=null;
+  node.onaudioprocess=_v=>{const _w=_v.inputBuffer,_x=$("chan").value,_y=_w.numberOfChannels,_z=inGain;
+    let _A;
+    if(_y===1||_x!=="mix")_A=_w.getChannelData(_y===1?0:+_x);
+    else{const _B=_w.getChannelData(0),_C=_w.getChannelData(1);if(!_u||_u.length!==_B.length)_u=new Float32Array(_B.length);for(let _D=0;_D<_B.length;_D++)_u[_D]=(_B[_D]+_C[_D])*0.5;_A=_u}
+    if(_z!==1){if(!_u||_u.length!==_A.length)_u=new Float32Array(_A.length);for(let _E=0;_E<_A.length;_E++)_u[_E]=_A[_E]*_z;_A=_u}
+    {let _F=0;for(let _G=0;_G<_A.length;_G+=4){const _H=Math.abs(_A[_G]);if(_H>_F)_F=_H}inPeak=Math.max(_F,inPeak*0.9)}
+    dec.push(_A)};
+  const _I=_t.createGain();_I.gain.value=0;
+  _s.connect(node);node.connect(_I);_I.connect(_t.destination);
 }
-async function startListening(_I){
-  await stopAll();if(!_I)msg("");
+async function startListening(_J){
+  await stopAll();if(!_J)msg("");
   try{
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error("nomedia");
-    let _J=$("dev").value;try{if(!_J)_J=localStorage.getItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev")||""}catch(_K){}
-    try{stream=await openInput(_J)}catch(_L){stream=await openInput("")}
-    const _M=await listDevices();
-    const _N=stream.getAudioTracks()[0];
-    if(SRC==="usb"&&_M&&!$("dev").value&&_N&&_N.getSettings().deviceId!==_M.deviceId){
-      stream.getTracks().forEach(_O=>_O.stop());$("dev").value=_M.deviceId;stream=await openInput(_M.deviceId)}
-  }catch(_P){
+    let _K=$("dev").value;try{if(!_K)_K=localStorage.getItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev")||""}catch(_L){}
+    try{stream=await openInput(_K)}catch(_M){stream=await openInput("")}
+    const _N=await listDevices();
+    const _O=stream.getAudioTracks()[0];
+    if(SRC==="usb"&&_N&&!$("dev").value&&_O&&_O.getSettings().deviceId!==_N.deviceId){
+      stream.getTracks().forEach(_P=>_P.stop());$("dev").value=_N.deviceId;stream=await openInput(_N.deviceId)}
+  }catch(_Q){
     msg(T("Non riesco ad aprire l'ingresso audio. Controlla che la radio sia collegata e, su Mac, che CWIU1MVI abbia il permesso Microfono in Impostazioni di Sistema › Privacy e sicurezza."),true);
     return false;
   }
   attach(ensureCtx().createMediaStreamSource(stream));
-  mode="mic";$("micBtn").classList.add("live");$("micBtn").querySelector(".t").textContent=T("Ferma ascolto");
-  const _Q=(stream.getAudioTracks()[0]||{}).label||T("ingresso audio");setState(T("in ascolto"));
+  mode="mic";evLog("ascolto avviato","");$("micBtn").classList.add("live");$("micBtn").querySelector(".t").textContent=T("Ferma ascolto");
+  const _R=(stream.getAudioTracks()[0]||{}).label||T("ingresso audio");setState(T("in ascolto"));
   if(rig.pitch&&rig.cw)applyPitch();
-  msg(T("In ascolto da: {0}",_Q)+(/usb audio codec|icom|usb/i.test(_Q)?" "+T("(audio USB della radio)."):"."));
+  msg(T("In ascolto da: {0}",_R)+(/usb audio codec|icom|usb/i.test(_R)?" "+T("(audio USB della radio)."):"."));
   return true;
 }
 $("micBtn").onclick=()=>{if(mode==="mic")stopAll();else startListening()};
-async function openInput(_R){
-  const _S={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:{ideal:2}};
-  if(_R)_S.deviceId={exact:_R};
-  return navigator.mediaDevices.getUserMedia({audio:_S});
+async function openInput(_S){
+  const _T={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:{ideal:2}};
+  if(_S)_T.deviceId={exact:_S};
+  return navigator.mediaDevices.getUserMedia({audio:_T});
 }
 async function listDevices(){
-  let _T=null;
-  try{const _U=(await navigator.mediaDevices.enumerateDevices()).filter(_V=>_V.kind==="audioinput");
-    const _W=$("dev"),_X=_W.value;_W.textContent="";
-    const _Y=document.createElement("option");_Y.value="";_Y.textContent=T("Scelto in automatico");_W.appendChild(_Y);
-    _U.forEach((_Z,_aa)=>{const _ab=document.createElement("option");_ab.value=_Z.deviceId;_ab.textContent=_Z.label||T("Ingresso {0}",_aa+1);_W.appendChild(_ab);
-      if(!_T&&/usb audio codec|icom|ic-\d|kenwood|yaesu|elecraft|xiegu/i.test(_Z.label))_T=_Z});
-    if(_X)_W.value=_X;
-  }catch(_ac){}
-  return _T;
+  let _U=null;
+  try{const _V=(await navigator.mediaDevices.enumerateDevices()).filter(_W=>_W.kind==="audioinput");
+    const _X=$("dev"),_Y=_X.value;_X.textContent="";
+    const _Z=document.createElement("option");_Z.value="";_Z.textContent=T("Scelto in automatico");_X.appendChild(_Z);
+    _V.forEach((_aa,_ab)=>{const _ac=document.createElement("option");_ac.value=_aa.deviceId;_ac.textContent=_aa.label||T("Ingresso {0}",_ab+1);_X.appendChild(_ac);
+      if(!_U&&/usb audio codec|icom|ic-\d|kenwood|yaesu|elecraft|xiegu/i.test(_aa.label))_U=_aa});
+    if(_Y)_X.value=_Y;
+  }catch(_ad){}
+  return _U;
 }
-$("dev").onchange=()=>{try{localStorage.setItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev",$("dev").value)}catch(_ad){}if(mode==="mic")startListening()};
-function setSrc(_ae,_af){SRC=_ae==="an"?"an":"usb";try{localStorage.setItem("cwiu-src",SRC)}catch(_ag){}
-  $("srcSeg").querySelectorAll("button").forEach(_ah=>_ah.setAttribute("aria-pressed",String(_ah.dataset.v===SRC)));$("anRow").hidden=SRC!=="an";
-  let _ai=0;try{_ai=+localStorage.getItem("cwiu-an-gain")||0}catch(_aj){}$("anGain").value=_ai;$("anGainV").textContent=(_ai>0?"+":"")+_ai+" dB";inGain=SRC==="an"?Math.pow(10,_ai/20):1;
-  if(_af){$("dev").value="";if(mode==="mic")startListening()}}
-$("srcSeg").onclick=_ak=>{const _al=_ak.target.closest("button");if(_al)setSrc(_al.dataset.v,true)};
-$("anGain").oninput=()=>{const _am=+$("anGain").value;$("anGainV").textContent=(_am>0?"+":"")+_am+" dB";inGain=Math.pow(10,_am/20);try{localStorage.setItem("cwiu-an-gain",_am)}catch(_an){}};
+$("dev").onchange=()=>{try{localStorage.setItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev",$("dev").value)}catch(_ae){}if(mode==="mic")startListening()};
+function setSrc(_af,_ag){SRC=_af==="an"?"an":"usb";try{localStorage.setItem("cwiu-src",SRC)}catch(_ah){}
+  $("srcSeg").querySelectorAll("button").forEach(_ai=>_ai.setAttribute("aria-pressed",String(_ai.dataset.v===SRC)));$("anRow").hidden=SRC!=="an";
+  let _aj=0;try{_aj=+localStorage.getItem("cwiu-an-gain")||0}catch(_ak){}$("anGain").value=_aj;$("anGainV").textContent=(_aj>0?"+":"")+_aj+" dB";inGain=SRC==="an"?Math.pow(10,_aj/20):1;
+  if(_ag){$("dev").value="";if(mode==="mic")startListening()}}
+$("srcSeg").onclick=_al=>{const _am=_al.target.closest("button");if(_am)setSrc(_am.dataset.v,true)};
+$("anGain").oninput=()=>{const _an=+$("anGain").value;$("anGainV").textContent=(_an>0?"+":"")+_an+" dB";inGain=Math.pow(10,_an/20);try{localStorage.setItem("cwiu-an-gain",_an)}catch(_ao){}};
 setSrc(SRC,false);
 const REC={on:false,buf:[],n:0,total:0,max:0,fs:0,name:"",busy:Promise.resolve()};
 const REC_MAX_S=3600;
-async function recStart(_ao){
-  if(_ao!==true)REC.chain=0;
+async function recStart(_ap){
+  if(_ap!==true)REC.chain=0;
   if(REC.on){recStop();return}
   if(!dec||mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”."),true);return}
   if(!window.cwiuLog||!window.cwiuLog.recOpen){msg(T("La registrazione si salva solo nell'app per Mac e Windows."),true);return}
-  const _ap=new Date(),_aq=_ar=>String(_ar).padStart(2,"0");
-  const _as=(typeof rig!=="undefined"&&rig.freq)?"-"+Math.round(rig.freq/1000):"";
-  REC.name="registrazione-"+_ap.getFullYear()+_aq(_ap.getMonth()+1)+_aq(_ap.getDate())+"-"+_aq(_ap.getHours())+_aq(_ap.getMinutes())+_aq(_ap.getSeconds())+_as+".wav";
+  const _aq=new Date(),_ar=_as=>String(_as).padStart(2,"0");
+  const _at=(typeof rig!=="undefined"&&rig.freq)?"-"+Math.round(rig.freq/1000):"";
+  REC.name="registrazione-"+_aq.getFullYear()+_ar(_aq.getMonth()+1)+_ar(_aq.getDate())+"-"+_ar(_aq.getHours())+_ar(_aq.getMinutes())+_ar(_aq.getSeconds())+_at+".wav";
   REC.fs=Math.round(dec.fs);
-  let _at=false;try{_at=await window.cwiuLog.recOpen(REC.name,REC.fs)}catch(_au){}
-  if(!_at){msg(T("Non riesco a salvare la registrazione."),true);return}
+  let _au=false;try{_au=await window.cwiuLog.recOpen(REC.name,REC.fs)}catch(_av){}
+  if(!_au){msg(T("Non riesco a salvare la registrazione."),true);return}
   REC.on=true;REC.buf=[];REC.n=0;REC.total=0;REC.max=REC.fs*REC_MAX_S;
   $("recBtn").textContent=T("■ Ferma registrazione");$("recBtn").classList.add("live");msg(T("Registrazione dell'audio in corso…"));
   if(typeof menuState==="function")menuState();
 }
 function recFlush(){
-  if(!REC.n)return;const _av=new Int16Array(REC.n);let _aw=0;
-  for(const _ax of REC.buf)for(let _ay=0;_ay<_ax.length;_ay++){const _az=Math.max(-1,Math.min(1,_ax[_ay]));_av[_aw++]=Math.round(_az*32767)}
-  REC.buf=[];REC.n=0;const _aA=new Uint8Array(_av.buffer);
-  REC.busy=REC.busy.then(()=>window.cwiuLog.recAppend(_aA)).catch(()=>{});
+  if(!REC.n)return;const _aw=new Int16Array(REC.n);let _ax=0;
+  for(const _ay of REC.buf)for(let _az=0;_az<_ay.length;_az++){const _aA=Math.max(-1,Math.min(1,_ay[_az]));_aw[_ax++]=Math.round(_aA*32767)}
+  REC.buf=[];REC.n=0;const _aB=new Uint8Array(_aw.buffer);
+  REC.busy=REC.busy.then(()=>window.cwiuLog.recAppend(_aB)).catch(()=>{});
 }
 function recRoll(){recStop();REC.chain=(REC.chain||0)+1;if(REC.chain<24)REC.busy=REC.busy.then(()=>{if(!REC.on)return recStart(true)}).catch(()=>{})}
-function recPush(_aB){if(!REC.on)return;const _aC=Math.min(_aB.length,REC.max-REC.total);if(_aC<=0){recRoll();return}
-  REC.buf.push(Float32Array.from(_aB.subarray(0,_aC)));REC.n+=_aC;REC.total+=_aC;
+function recPush(_aC){if(!REC.on)return;const _aD=Math.min(_aC.length,REC.max-REC.total);if(_aD<=0){recRoll();return}
+  REC.buf.push(Float32Array.from(_aC.subarray(0,_aD)));REC.n+=_aD;REC.total+=_aD;
   if(REC.n>=REC.fs*4)recFlush();
   if(REC.total>=REC.max)recRoll()}
 const CLIP={on:false,ring:[],n:0,fs:0,saved:0,max:400};
-try{CLIP.on=!!prefs().clips}catch(_aD){}
-function clipPush(_aE,_aF){CLIP.fs=Math.round(_aF);CLIP.ring.push(Float32Array.from(_aE));CLIP.n+=_aE.length;
-  const _aG=CLIP.fs*100;while(CLIP.n>_aG&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
-function clipSave(_aH,_aI){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
+try{CLIP.on=!!prefs().clips}catch(_aE){}
+function clipPush(_aF,_aG){CLIP.fs=Math.round(_aG);CLIP.ring.push(Float32Array.from(_aF));CLIP.n+=_aF.length;
+  const _aH=CLIP.fs*100;while(CLIP.n>_aH&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
+function clipSave(_aI,_aJ){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
   if(!CLIP.on||REC.on||!CLIP.fs||!window.cwiuLog||!window.cwiuLog.recOpen||CLIP.saved>=CLIP.max)return "";
-  _aH=String(_aH).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
-  const _aJ=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aI))*CLIP.fs)),_aK=new Int16Array(_aJ);let _aL=_aJ;
-  for(let _aM=CLIP.ring.length-1;_aM>=0&&_aL>0;_aM--){const _aN=CLIP.ring[_aM];for(let _aO=_aN.length-1;_aO>=0&&_aL>0;_aO--){const _aP=Math.max(-1,Math.min(1,_aN[_aO]));_aK[--_aL]=Math.round(_aP*32767)}}
-  const _aQ=new Uint8Array(_aK.buffer),_aR=CLIP.fs;CLIP.saved++;
-  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aH,_aR)){await window.cwiuLog.recAppend(_aQ);await window.cwiuLog.recClose()}}).catch(()=>{});
-  return _aH}
-function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _aS=prefs();_aS.clips=CLIP.on;savePrefs(_aS);clipUi();
+  _aI=String(_aI).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
+  const _aK=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aJ))*CLIP.fs)),_aL=new Int16Array(_aK);let _aM=_aK;
+  for(let _aN=CLIP.ring.length-1;_aN>=0&&_aM>0;_aN--){const _aO=CLIP.ring[_aN];for(let _aP=_aO.length-1;_aP>=0&&_aM>0;_aP--){const _aQ=Math.max(-1,Math.min(1,_aO[_aP]));_aL[--_aM]=Math.round(_aQ*32767)}}
+  const _aR=new Uint8Array(_aL.buffer),_aS=CLIP.fs;CLIP.saved++;
+  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aI,_aS)){await window.cwiuLog.recAppend(_aR);await window.cwiuLog.recClose()}}).catch(()=>{});
+  return _aI}
+function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _aT=prefs();_aT.clips=CLIP.on;savePrefs(_aT);clipUi();
   msg(CLIP.on?T("Ritagli attivi: durante l'inseguimento salvo l'audio delle stazioni con segnale ma non lette."):T("Ritagli disattivati."))}
-function clipUi(){const _aT=$("clipBtn");if(!_aT)return;_aT.classList.toggle("live",CLIP.on);_aT.setAttribute("aria-pressed",CLIP.on?"true":"false")}
+function clipUi(){const _aU=$("clipBtn");if(!_aU)return;_aU.classList.toggle("live",CLIP.on);_aU.setAttribute("aria-pressed",CLIP.on?"true":"false")}
 function recStop(){
   if(!REC.on)return;REC.on=false;recFlush();
   $("recBtn").textContent=T("⏺ Registra");$("recBtn").classList.remove("live");
-  const _aU=REC.name,_aV=Math.max(1,Math.round(REC.total/REC.fs/60));
-  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_aW=>{if(_aW)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_aU,_aV));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
+  const _aV=REC.name,_aW=Math.max(1,Math.round(REC.total/REC.fs/60));
+  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_aX=>{if(_aX)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_aV,_aW));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
   if(typeof menuState==="function")menuState();
 }
-function splitWord(_aX){
-  let _aY;
-  if((_aY=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_aX)))return ["CQ",_aY[1]];
-  if((_aY=/^DE([A-Z0-9\/]{3,})$/.exec(_aX))&&isCall(_aY[1]))return ["DE",_aY[1]];
-  if((_aY=/^([A-Z0-9\/]{3,})DE$/.exec(_aX))&&isCall(_aY[1]))return [_aY[1],"DE"];
-  if((_aY=/^(TU|TNX|R)(73|5NN|599)$/.exec(_aX)))return [_aY[1],_aY[2]];
-  return [_aX];
+function splitWord(_aY){
+  let _aZ;
+  if((_aZ=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_aY)))return ["CQ",_aZ[1]];
+  if((_aZ=/^DE([A-Z0-9\/]{3,})$/.exec(_aY))&&isCall(_aZ[1]))return ["DE",_aZ[1]];
+  if((_aZ=/^([A-Z0-9\/]{3,})DE$/.exec(_aY))&&isCall(_aZ[1]))return [_aZ[1],"DE"];
+  if((_aZ=/^(TU|TNX|R)(73|5NN|599)$/.exec(_aY)))return [_aZ[1],_aZ[2]];
+  return [_aY];
 }
 </script>
 <script>
@@ -1992,12 +1993,13 @@ async function openAt(_ad,_ae){
   if(_ae==="civ"){civSend([0x19,0x00],0x00);for(const _aj of Object.keys(ICOM))civSend([0x03],+_aj)}
   else{aSend(";");await wait(60);aSend("ID;")}
   for(let _ak=0;_ak<12&&!rig.got;_ak++)await wait(100);
-  if(rig.got&&rig.proto){rig.baud=_ad;return "ok"}
+  if(rig.got&&rig.proto){rig.baud=_ad;evLog("CAT collegato",(rig.port&&rig.port.rigger?"The Rigger "+rig.port.rigger:"porta USB")+" "+_ad);return "ok"}
   await closePort();await wait(250);return "silent";
 }
 async function catDisconnect(_al){
   try{if(typeof QSO!=="undefined"&&QSO.txing)qsoStop()}catch(_am){}
-  try{if(chase.on)chaseStop()}catch(_an){}try{if(hunt.on)huntStop()}catch(_ao){}try{if(scan.on)scanStop(true)}catch(_ap){}
+  evLog("CAT scollegato",_al||"");
+  try{if(chase.on)chaseStop(undefined,"CAT scollegato")}catch(_an){}try{if(hunt.on)huntStop()}catch(_ao){}try{if(scan.on)scanStop(true)}catch(_ap){}
   try{if(REC.on)recStop()}catch(_aq){}
   if(mode==="mic")await stopAll();
   clearInterval(rig.timer);rig.timer=null;
@@ -2084,7 +2086,7 @@ $("filSeg").onclick=_bM=>{const _bN=_bM.target.closest("button");if(!_bN)return;
 $("preSeg").onclick=_bO=>{const _bP=_bO.target.closest("button");if(!_bP)return;civSend([0x16,0x02,+_bP.dataset.v]);setSeg("preSeg",+_bP.dataset.v)};
 $("nr").onchange=_bQ=>civSend([0x16,0x40,_bQ.target.checked?1:0]);
 function rigControls(_bR){
-  $("rigCtl").disabled=!_bR;tuneControls(_bR);if(!_bR&&hunt.on)huntStop(T("Monitoraggio fermato: CAT scollegato."));if(!_bR&&typeof chase!=="undefined"&&chase.on)chaseStop(T("Inseguimento fermato."));if(!_bR&&scan.on)scanStop(true);
+  $("rigCtl").disabled=!_bR;tuneControls(_bR);if(!_bR&&hunt.on)huntStop(T("Monitoraggio fermato: CAT scollegato."));if(!_bR&&typeof chase!=="undefined"&&chase.on)chaseStop(T("Inseguimento fermato."),"CAT spento");if(!_bR&&scan.on)scanStop(true);
   const _bS=_bR&&rig.proto==="civ",_bT=_bS&&!!usbc();
   try{k7Enable(_bS&&rig.addr===0x88)}catch(_bU){}
   document.querySelectorAll("[data-usb]").forEach(_bV=>_bV.disabled=!_bT);
@@ -2255,7 +2257,7 @@ function huntStart(){
   if(!rig.port){msg(T("Collega il CAT per usare il monitoraggio."),true);return}
   if(mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”: il monitoraggio legge il waterfall."),true);return}
   if(!curBand()){msg(T("Porta la radio in una banda radioamatoriale: il monitoraggio resta nel suo segmento CW."),true);return}
-  if(scan.on)scanStop(true);if(typeof chase!=="undefined"&&chase.on)chaseStop();
+  if(scan.on)scanStop(true);if(typeof chase!=="undefined"&&chase.on)chaseStop(undefined,"monitoraggio avviato");
   hunt.on=true;hunt.visited.clear();hunt.n=0;hunt.phase="pick";hunt.pickAt=Date.now()+800;hunt.emptySince=0;
   hunt.restoreFil=rig.fil;if(rig.proto==="civ")cat.filter(1);
   $("huntBtn").setAttribute("aria-pressed","true");$("huntBtn").textContent=T("■ Ferma monitoraggio");$("scanBtn").disabled=true;
@@ -2546,105 +2548,108 @@ const LOGAPI=window.cwiuLog||null;
 const pad2=_ds=>String(_ds).padStart(2,"0");
 const dUTC=_dt=>{const _du=new Date(_dt);return _du.getUTCFullYear()+"-"+pad2(_du.getUTCMonth()+1)+"-"+pad2(_du.getUTCDate())};
 const hUTC=_dv=>{const _dw=new Date(_dv);return pad2(_dw.getUTCHours())+":"+pad2(_dw.getUTCMinutes())+":"+pad2(_dw.getUTCSeconds())};
-const csv=_dx=>{_dx=_dx==null?"":String(_dx);return /[",;\n]/.test(_dx)?'"'+_dx.replace(/"/g,'""')+'"':_dx};
+function evLog(_dx,_dy){try{if(!LOGAPI)return;const _dz=Date.now();LOGAPI.append("eventi-"+dUTC(_dz)+".csv","utc;evento;dettaglio",[hUTC(_dz),_dx,'"'+String(_dy==null?"":_dy).replace(/"/g,"'")+'"'])}catch(_dA){}}
+setTimeout(()=>{try{evLog("avvio","pagina "+WEB_VERSION)}catch(_dB){}},0);
+document.addEventListener("visibilitychange",()=>evLog(document.hidden?"finestra nascosta":"finestra visibile",""));
+const csv=_dC=>{_dC=_dC==null?"":String(_dC);return /[",;\n]/.test(_dC)?'"'+_dC.replace(/"/g,'""')+'"':_dC};
 const ADIF_BANDS=[["2190m",135700,137800],["630m",472000,479000],["160m",1800000,2000000],["80m",3500000,4000000],["60m",5060000,5450000],["40m",7000000,7300000],["30m",10100000,10150000],["20m",14000000,14350000],["17m",18068000,18168000],["15m",21000000,21450000],["12m",24890000,24990000],["10m",28000000,29700000],["6m",50000000,54000000],["4m",70000000,71000000],["2m",144000000,148000000],["70cm",420000000,450000000]];
-const adifBand=_dy=>{const _dz=_dy&&ADIF_BANDS.find(_dA=>_dy>=_dA[1]&&_dy<=_dA[2]);return _dz?_dz[0]:""};
-function adifFields(_dB){
-  const _dC={CALL:_dB.spotGuess?"":_dB.from&&!_dB.guess?_dB.from:(_dB.from||""),QSO_DATE:dUTC(_dB.t).replace(/-/g,""),TIME_ON:hUTC(_dB.t).replace(/:/g,""),
-    FREQ:_dB.rf?(_dB.rf/1e6).toFixed(6):"",BAND:adifBand(_dB.rf),MODE:"CW",RST_RCVD:_dB.rst||"",NAME:_dB.name||"",QTH:_dB.qth||"",GRIDSQUARE:_dB.loc||"",COMMENT:(_dB.text||"").replace(/[^\x20-\x7e]/g,"")};
-  return _dC}
-const adifEsc=(_dD,_dE)=>{_dE=String(_dE==null?"":_dE);return _dE?"<"+_dD+":"+_dE.length+">"+_dE+" ":""};
-function adifRecord(_dF){
-  const _dG=adifFields(_dF),_dH=prefs();let _dI="";
-  for(const _dJ of ["CALL","QSO_DATE","TIME_ON","FREQ","BAND","MODE","RST_RCVD","NAME","QTH","GRIDSQUARE","COMMENT"])_dI+=adifEsc(_dJ,_dG[_dJ]);
-  _dI+=adifEsc("SWL","Y");if(_dH.call)_dI+=adifEsc("STATION_CALLSIGN",_dH.call);if(_dH.grid)_dI+=adifEsc("MY_GRIDSQUARE",_dH.grid);
-  _dI+=adifEsc("APP_CWIU1MVI_TO",_dF.to||"")+adifEsc("APP_CWIU1MVI_TYPE",_dF.type||"")+adifEsc("APP_CWIU1MVI_WPM",_dF.wpm||"")+adifEsc("APP_CWIU1MVI_SNR",_dF.db||"")+adifEsc("APP_CWIU1MVI_PITCH",Math.round(_dF.f)||"");
-  if(_dF.hard!=null)_dI+=adifEsc("APP_CWIU1MVI_V1",_dF.hard);if(_dF.stack)_dI+=adifEsc("APP_CWIU1MVI_STACK",_dF.stack);
-  return _dI+"<EOR>"}
-function adifHeader(){const _dK=new Date(),_dL=_dK.getUTCFullYear()+pad2(_dK.getUTCMonth()+1)+pad2(_dK.getUTCDate())+" "+pad2(_dK.getUTCHours())+pad2(_dK.getUTCMinutes())+pad2(_dK.getUTCSeconds());
-  return "CWIU1MVI - listening log (SWL)\n"+adifEsc("ADIF_VER","3.1.4")+adifEsc("PROGRAMID","CWIU1MVI")+adifEsc("PROGRAMVERSION",WEB_VERSION)+adifEsc("CREATED_TIMESTAMP",_dL)+"<EOH>"}
-function logMsg(_dM){
-  noteStation(_dM);
-  if(LOGAPI)LOGAPI.append("registro-"+dUTC(_dM.t)+".adi",adifHeader(),adifRecord(_dM)).catch(()=>{});
+const adifBand=_dD=>{const _dE=_dD&&ADIF_BANDS.find(_dF=>_dD>=_dF[1]&&_dD<=_dF[2]);return _dE?_dE[0]:""};
+function adifFields(_dG){
+  const _dH={CALL:_dG.spotGuess?"":_dG.from&&!_dG.guess?_dG.from:(_dG.from||""),QSO_DATE:dUTC(_dG.t).replace(/-/g,""),TIME_ON:hUTC(_dG.t).replace(/:/g,""),
+    FREQ:_dG.rf?(_dG.rf/1e6).toFixed(6):"",BAND:adifBand(_dG.rf),MODE:"CW",RST_RCVD:_dG.rst||"",NAME:_dG.name||"",QTH:_dG.qth||"",GRIDSQUARE:_dG.loc||"",COMMENT:(_dG.text||"").replace(/[^\x20-\x7e]/g,"")};
+  return _dH}
+const adifEsc=(_dI,_dJ)=>{_dJ=String(_dJ==null?"":_dJ);return _dJ?"<"+_dI+":"+_dJ.length+">"+_dJ+" ":""};
+function adifRecord(_dK){
+  const _dL=adifFields(_dK),_dM=prefs();let _dN="";
+  for(const _dO of ["CALL","QSO_DATE","TIME_ON","FREQ","BAND","MODE","RST_RCVD","NAME","QTH","GRIDSQUARE","COMMENT"])_dN+=adifEsc(_dO,_dL[_dO]);
+  _dN+=adifEsc("SWL","Y");if(_dM.call)_dN+=adifEsc("STATION_CALLSIGN",_dM.call);if(_dM.grid)_dN+=adifEsc("MY_GRIDSQUARE",_dM.grid);
+  _dN+=adifEsc("APP_CWIU1MVI_TO",_dK.to||"")+adifEsc("APP_CWIU1MVI_TYPE",_dK.type||"")+adifEsc("APP_CWIU1MVI_WPM",_dK.wpm||"")+adifEsc("APP_CWIU1MVI_SNR",_dK.db||"")+adifEsc("APP_CWIU1MVI_PITCH",Math.round(_dK.f)||"");
+  if(_dK.hard!=null)_dN+=adifEsc("APP_CWIU1MVI_V1",_dK.hard);if(_dK.stack)_dN+=adifEsc("APP_CWIU1MVI_STACK",_dK.stack);
+  return _dN+"<EOR>"}
+function adifHeader(){const _dP=new Date(),_dQ=_dP.getUTCFullYear()+pad2(_dP.getUTCMonth()+1)+pad2(_dP.getUTCDate())+" "+pad2(_dP.getUTCHours())+pad2(_dP.getUTCMinutes())+pad2(_dP.getUTCSeconds());
+  return "CWIU1MVI - listening log (SWL)\n"+adifEsc("ADIF_VER","3.1.4")+adifEsc("PROGRAMID","CWIU1MVI")+adifEsc("PROGRAMVERSION",WEB_VERSION)+adifEsc("CREATED_TIMESTAMP",_dQ)+"<EOH>"}
+function logMsg(_dR){
+  noteStation(_dR);
+  if(LOGAPI)LOGAPI.append("registro-"+dUTC(_dR.t)+".adi",adifHeader(),adifRecord(_dR)).catch(()=>{});
   saveSoon();
 }
 function exportAdif(){
-  const _dN=MSG.list.filter(_dO=>!_dO.live&&_dO.from).slice().reverse();
-  if(!_dN.length){msg(T("Nel registro non ci sono ancora messaggi con nominativo da esportare."),true);return}
-  const _dP=adifHeader()+"\n"+_dN.map(adifRecord).join("\n")+"\n";
-  const _dQ=new Date(),_dR="cwiu1mvi-"+_dQ.getFullYear()+pad2(_dQ.getMonth()+1)+pad2(_dQ.getDate())+"-"+pad2(_dQ.getHours())+pad2(_dQ.getMinutes())+".adi";
-  if(LOGAPI&&LOGAPI.saveAs){LOGAPI.saveAs(_dR,_dP).then(_dS=>{if(_dS)msg(T("Esportati {0} messaggi in {1}",_dN.length,_dS))}).catch(()=>msg(T("Non riesco a salvare il file."),true));return}
-  try{const _dT=document.createElement("a");_dT.href=URL.createObjectURL(new Blob([_dP],{type:"text/plain"}));_dT.download=_dR;document.body.appendChild(_dT);_dT.click();setTimeout(()=>{URL.revokeObjectURL(_dT.href);_dT.remove()},2000);msg(T("Esportati {0} messaggi in {1}",_dN.length,_dR))}catch(_dU){msg(T("Non riesco a salvare il file."),true)}
+  const _dS=MSG.list.filter(_dT=>!_dT.live&&_dT.from).slice().reverse();
+  if(!_dS.length){msg(T("Nel registro non ci sono ancora messaggi con nominativo da esportare."),true);return}
+  const _dU=adifHeader()+"\n"+_dS.map(adifRecord).join("\n")+"\n";
+  const _dV=new Date(),_dW="cwiu1mvi-"+_dV.getFullYear()+pad2(_dV.getMonth()+1)+pad2(_dV.getDate())+"-"+pad2(_dV.getHours())+pad2(_dV.getMinutes())+".adi";
+  if(LOGAPI&&LOGAPI.saveAs){LOGAPI.saveAs(_dW,_dU).then(_dX=>{if(_dX)msg(T("Esportati {0} messaggi in {1}",_dS.length,_dX))}).catch(()=>msg(T("Non riesco a salvare il file."),true));return}
+  try{const _dY=document.createElement("a");_dY.href=URL.createObjectURL(new Blob([_dU],{type:"text/plain"}));_dY.download=_dW;document.body.appendChild(_dY);_dY.click();setTimeout(()=>{URL.revokeObjectURL(_dY.href);_dY.remove()},2000);msg(T("Esportati {0} messaggi in {1}",_dS.length,_dW))}catch(_dZ){msg(T("Non riesco a salvare il file."),true)}
 }
 $("adifBtn").onclick=exportAdif;
 let saveT=0;
 function saveSoon(){clearTimeout(saveT);saveT=setTimeout(saveAll,1500)}
 function saveAll(){
-  try{localStorage.setItem("cwiu-sta",JSON.stringify([...STA.values()]))}catch(_dV){}
+  try{localStorage.setItem("cwiu-sta",JSON.stringify([...STA.values()]))}catch(_ea){}
   if(LOGAPI&&STA.dirty){STA.dirty=false;
-    const _dW=[...STA.values()].sort((_dX,_dY)=>_dY.last-_dX.last).map(_dZ=>[_dZ.call,dUTC(_dZ.first)+" "+hUTC(_dZ.first),dUTC(_dZ.last)+" "+hUTC(_dZ.last),_dZ.n,_dZ.rf?(_dZ.rf/1000).toFixed(2):"",_dZ.wpm||"",_dZ.db||"",_dZ.name,_dZ.qth,_dZ.loc].map(csv).join(","));
-    LOGAPI.write("stazioni.csv",["nominativo,prima_utc,ultima_utc,messaggi,ultima_frequenza_khz,wpm,segnale_max_db,nome,qth,locatore",..._dW].join("\n")).catch(()=>{})}
+    const _eb=[...STA.values()].sort((_ec,_ed)=>_ed.last-_ec.last).map(_ee=>[_ee.call,dUTC(_ee.first)+" "+hUTC(_ee.first),dUTC(_ee.last)+" "+hUTC(_ee.last),_ee.n,_ee.rf?(_ee.rf/1000).toFixed(2):"",_ee.wpm||"",_ee.db||"",_ee.name,_ee.qth,_ee.loc].map(csv).join(","));
+    LOGAPI.write("stazioni.csv",["nominativo,prima_utc,ultima_utc,messaggi,ultima_frequenza_khz,wpm,segnale_max_db,nome,qth,locatore",..._eb].join("\n")).catch(()=>{})}
 }
 function loadAll(){
-  try{localStorage.removeItem("cwiu-msgs")}catch(_ea){}
-  try{for(const _eb of JSON.parse(localStorage.getItem("cwiu-sta")||"[]"))STA.set(_eb.call,_eb)}catch(_ec){}
+  try{localStorage.removeItem("cwiu-msgs")}catch(_ef){}
+  try{for(const _eg of JSON.parse(localStorage.getItem("cwiu-sta")||"[]"))STA.set(_eg.call,_eg)}catch(_eh){}
 }
 if(LOGAPI){$("logOpen").hidden=false;$("logOpen").onclick=()=>LOGAPI.openFolder();
-  LOGAPI.folder().then(_ed=>{$("logInfo").textContent=T("Il registro si salva da solo in {0}: un file ADIF al giorno (registro-AAAA-MM-GG.adi) e l'elenco stazioni.",_ed)}).catch(()=>{})}
+  LOGAPI.folder().then(_ei=>{$("logInfo").textContent=T("Il registro si salva da solo in {0}: un file ADIF al giorno (registro-AAAA-MM-GG.adi) e l'elenco stazioni.",_ei)}).catch(()=>{})}
 else $("logInfo").textContent=T("Il registro resta in questo browser. Nell'app per Mac e Windows viene salvato anche in un file ADIF al giorno, in Documenti › CWIU1MVI › Log.");
 let view="msg";
-function setView(_ee){if(_ee==="sta"||_ee==="msg")_ee="qso";view=_ee;document.body.classList.toggle("qmode",_ee==="qso"&&typeof qp==="function"&&qp().op==="qso");for(const [_ef,_eg] of [["msg","Msg"],["sta","Sta"],["cl","Cl"],["qso","Qso"]]){$("tab"+_eg).setAttribute("aria-selected",String(_ee===_ef));$("view"+_eg).hidden=_ee!==_ef}
-  $("onlyCq").parentElement.hidden=_ee!=="msg";for(const _eh of ["q","clearMsgs","adifBtn"])$(_eh).hidden=_ee==="cl"||_ee==="qso";if(_ee==="cl"){CL.dirty=true}else render(true)}
+function setView(_ej){if(_ej==="sta"||_ej==="msg")_ej="qso";view=_ej;document.body.classList.toggle("qmode",_ej==="qso"&&typeof qp==="function"&&qp().op==="qso");for(const [_ek,_el] of [["msg","Msg"],["sta","Sta"],["cl","Cl"],["qso","Qso"]]){$("tab"+_el).setAttribute("aria-selected",String(_ej===_ek));$("view"+_el).hidden=_ej!==_ek}
+  $("onlyCq").parentElement.hidden=_ej!=="msg";for(const _em of ["q","clearMsgs","adifBtn"])$(_em).hidden=_ej==="cl"||_ej==="qso";if(_ej==="cl"){CL.dirty=true}else render(true)}
 $("tabCl").onclick=()=>setView("cl");$("tabQso").onclick=()=>setView("qso");
 $("q").oninput=()=>render(true);$("onlyCq").onchange=()=>render(true);
-function textWithCalls(_ei,_ej){_ei.textContent="";for(const _ek of _ej.split(/(\s+)/)){if(isCall(_ek)){const _el=document.createElement("span");_el.className="call";_el.textContent=_ek;_ei.appendChild(_el)}else _ei.appendChild(document.createTextNode(_ek))}}
-function freqLabel(_em,_en){return _em?(_em/1000).toFixed(2):Math.round(_en)+" Hz"}
-function tuneTo(_eo,_ep){
-  if(rig.port&&_eo)cat.setFreq(Math.round(_eo/10)*10);
-  else if(dec&&_ep){dec.setFreq(Math.round(_ep/5)*5)}
+function textWithCalls(_en,_eo){_en.textContent="";for(const _ep of _eo.split(/(\s+)/)){if(isCall(_ep)){const _eq=document.createElement("span");_eq.className="call";_eq.textContent=_ep;_en.appendChild(_eq)}else _en.appendChild(document.createTextNode(_ep))}}
+function freqLabel(_er,_es){return _er?(_er/1000).toFixed(2):Math.round(_es)+" Hz"}
+function tuneTo(_et,_eu){
+  if(rig.port&&_et)cat.setFreq(Math.round(_et/10)*10);
+  else if(dec&&_eu){dec.setFreq(Math.round(_eu/5)*5)}
 }
 const rowOf=new Map();
-function msgRow(_eq){
-  let _er=rowOf.get(_eq.id);
-  if(!_er){_er=document.createElement("tr");_er.tabIndex=0;rowOf.set(_eq.id,_er);
-    for(const _es of ["c-date","","callc","","c-band","c-mode","c-rst","c-name","c-qth","c-grid","txt"]){const _et=document.createElement("td");if(_es)_et.className=_es;_er.appendChild(_et)}
-    const _eu=()=>tuneTo(_eq.rf,_eq.f);_er.ondblclick=()=>{if(typeof qsoPickLine==="function"&&qp().op==="qso")qsoPickLine(_eq)};_er.onclick=_eu;_er.onkeydown=_ev=>{if(_ev.key==="Enter"){_ev.preventDefault();_eu()}}}
-  if(_eq.dirty!==false||!_er._done){_eq.dirty=false;_er._done=true;const _ew=_er.children,_ex=adifFields(_eq);
-    _ew[0].textContent=_ex.QSO_DATE;_ew[1].textContent=_ex.TIME_ON;
-    _ew[2].textContent=_eq.from?(_eq.from+(_eq.guess?"?":"")):"—";_ew[2].classList.toggle("guess",!!_eq.guess);
-    _ew[3].textContent=_eq.rf?_ex.FREQ:Math.round(_eq.f)+" Hz";_ew[4].textContent=_ex.BAND;_ew[5].textContent="CW";_ew[6].textContent=_ex.RST_RCVD;
-    _ew[7].textContent=_ex.NAME;_ew[8].textContent=_ex.QTH;_ew[9].textContent=_ex.GRIDSQUARE;
-    textWithCalls(_ew[10],_eq.text+(_eq.live&&_eq.st&&_eq.st.word?(_eq.text?" ":"")+_eq.st.word:""));
-    _er.classList.toggle("live",!!_eq.live);_er.classList.toggle("cq",/^CQ/.test(_eq.type||""))}
-  return _er;
+function msgRow(_ev){
+  let _ew=rowOf.get(_ev.id);
+  if(!_ew){_ew=document.createElement("tr");_ew.tabIndex=0;rowOf.set(_ev.id,_ew);
+    for(const _ex of ["c-date","","callc","","c-band","c-mode","c-rst","c-name","c-qth","c-grid","txt"]){const _ey=document.createElement("td");if(_ex)_ey.className=_ex;_ew.appendChild(_ey)}
+    const _ez=()=>tuneTo(_ev.rf,_ev.f);_ew.ondblclick=()=>{if(typeof qsoPickLine==="function"&&qp().op==="qso")qsoPickLine(_ev)};_ew.onclick=_ez;_ew.onkeydown=_eA=>{if(_eA.key==="Enter"){_eA.preventDefault();_ez()}}}
+  if(_ev.dirty!==false||!_ew._done){_ev.dirty=false;_ew._done=true;const _eB=_ew.children,_eC=adifFields(_ev);
+    _eB[0].textContent=_eC.QSO_DATE;_eB[1].textContent=_eC.TIME_ON;
+    _eB[2].textContent=_ev.from?(_ev.from+(_ev.guess?"?":"")):"—";_eB[2].classList.toggle("guess",!!_ev.guess);
+    _eB[3].textContent=_ev.rf?_eC.FREQ:Math.round(_ev.f)+" Hz";_eB[4].textContent=_eC.BAND;_eB[5].textContent="CW";_eB[6].textContent=_eC.RST_RCVD;
+    _eB[7].textContent=_eC.NAME;_eB[8].textContent=_eC.QTH;_eB[9].textContent=_eC.GRIDSQUARE;
+    textWithCalls(_eB[10],_ev.text+(_ev.live&&_ev.st&&_ev.st.word?(_ev.text?" ":"")+_ev.st.word:""));
+    _ew.classList.toggle("live",!!_ev.live);_ew.classList.toggle("cq",/^CQ/.test(_ev.type||""))}
+  return _ew;
 }
-function filtMsg(){const _ey=$("q").value.trim().toUpperCase(),_ez=$("onlyCq").checked;
-  return MSG.list.filter(_eA=>(!_ez||/^CQ/.test(_eA.type||""))&&(!_ey||(_eA.from||"").includes(_ey)||(_eA.to||"").includes(_ey)||_eA.text.includes(_ey)))}
-function render(_eB){
+function filtMsg(){const _eD=$("q").value.trim().toUpperCase(),_eE=$("onlyCq").checked;
+  return MSG.list.filter(_eF=>(!_eE||/^CQ/.test(_eF.type||""))&&(!_eD||(_eF.from||"").includes(_eD)||(_eF.to||"").includes(_eD)||_eF.text.includes(_eD)))}
+function render(_eG){
   if(view==="msg"){
-    if(!MSG.dirty&&!_eB)return;MSG.dirty=false;
-    const _eC=filtMsg().slice(0,300),_eD=$("msgBody");
-    const _eE=_eC.map(msgRow);
-    let _eF=0;for(const _eG of _eE){if(_eD.children[_eF]!==_eG)_eD.insertBefore(_eG,_eD.children[_eF]||null);_eF++}
-    while(_eD.children.length>_eE.length)_eD.removeChild(_eD.lastChild);
+    if(!MSG.dirty&&!_eG)return;MSG.dirty=false;
+    const _eH=filtMsg().slice(0,300),_eI=$("msgBody");
+    const _eJ=_eH.map(msgRow);
+    let _eK=0;for(const _eL of _eJ){if(_eI.children[_eK]!==_eL)_eI.insertBefore(_eL,_eI.children[_eK]||null);_eK++}
+    while(_eI.children.length>_eJ.length)_eI.removeChild(_eI.lastChild);
     $("msgEmpty").hidden=MSG.list.length>0;
-    const _eH=MSG.list.filter(_eI=>!_eI.live).length;$("count").textContent=T("{0} messaggi · {1} stazioni",_eH,STA.size);
+    const _eM=MSG.list.filter(_eN=>!_eN.live).length;$("count").textContent=T("{0} messaggi · {1} stazioni",_eM,STA.size);
   }else{
-    if(!STA.dirty&&!_eB&&!STA.shown)return;STA.shown=false;
-    const _eJ=$("q").value.trim().toUpperCase(),_eK=$("staBody");_eK.textContent="";
-    const _eL=[...STA.values()].filter(_eM=>!_eJ||_eM.call.includes(_eJ)).sort((_eN,_eO)=>_eO.last-_eN.last).slice(0,500);
-    for(const _eP of _eL){const _eQ=document.createElement("tr");_eQ.tabIndex=0;
-      const _eR=[_eP.call,dUTC(_eP.last).slice(5)+" "+hUTC(_eP.last).slice(0,5),dUTC(_eP.first).slice(5)+" "+hUTC(_eP.first).slice(0,5),_eP.n,freqLabel(_eP.rf,_eP.af),_eP.wpm||"",_eP.db||"",_eP.name||"",_eP.qth||"",_eP.loc||""];
-      _eR.forEach((_eS,_eT)=>{const _eU=document.createElement("td");_eU.textContent=_eS;if(_eT===0)_eU.className="call";if(_eT===5)_eU.className="c-wpm";if(_eT===6)_eU.className="c-db";_eQ.appendChild(_eU)});
-      const _eV=()=>tuneTo(_eP.rf,_eP.af);_eQ.onclick=_eV;_eQ.onkeydown=_eW=>{if(_eW.key==="Enter"){_eW.preventDefault();_eV()}};_eK.appendChild(_eQ)}
+    if(!STA.dirty&&!_eG&&!STA.shown)return;STA.shown=false;
+    const _eO=$("q").value.trim().toUpperCase(),_eP=$("staBody");_eP.textContent="";
+    const _eQ=[...STA.values()].filter(_eR=>!_eO||_eR.call.includes(_eO)).sort((_eS,_eT)=>_eT.last-_eS.last).slice(0,500);
+    for(const _eU of _eQ){const _eV=document.createElement("tr");_eV.tabIndex=0;
+      const _eW=[_eU.call,dUTC(_eU.last).slice(5)+" "+hUTC(_eU.last).slice(0,5),dUTC(_eU.first).slice(5)+" "+hUTC(_eU.first).slice(0,5),_eU.n,freqLabel(_eU.rf,_eU.af),_eU.wpm||"",_eU.db||"",_eU.name||"",_eU.qth||"",_eU.loc||""];
+      _eW.forEach((_eX,_eY)=>{const _eZ=document.createElement("td");_eZ.textContent=_eX;if(_eY===0)_eZ.className="call";if(_eY===5)_eZ.className="c-wpm";if(_eY===6)_eZ.className="c-db";_eV.appendChild(_eZ)});
+      const _fa=()=>tuneTo(_eU.rf,_eU.af);_eV.onclick=_fa;_eV.onkeydown=_fb=>{if(_fb.key==="Enter"){_fb.preventDefault();_fa()}};_eP.appendChild(_eV)}
     $("staEmpty").hidden=STA.size>0;$("count").textContent=T("{0} stazioni",STA.size);
   }
 }
-function renderLive(){if(MSG.list.some(_eX=>_eX.live)){MSG.dirty=true}render(false)}
+function renderLive(){if(MSG.list.some(_fc=>_fc.live)){MSG.dirty=true}render(false)}
 loadAll();render(true);
 function clearMsgs(){closeAllMsgs();MSG.list=[];rowOf.clear();$("msgBody").textContent="";setView("msg");render(true);msg(T("Griglia dei messaggi svuotata. Il registro su file resta."))}
 $("clearMsgs").onclick=clearMsgs;
-window.addEventListener("beforeunload",()=>{try{closeAllMsgs()}catch(_eY){}});
+window.addEventListener("beforeunload",()=>{try{closeAllMsgs()}catch(_fd){}});
 </script>
 <script>
 const GUIDE_ALL={};
@@ -3930,7 +3935,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.8";
+const WEB_VERSION="1.12.9";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4338,7 +4343,7 @@ function clRender(){
     for(const _aw of [_av,_as.khz.toFixed(1),_as.call,_as.n>1?_as.spotter+" +"+(_as.n-1):_as.spotter,_as.info]){const _ax=document.createElement("td");_ax.textContent=_aw;_at.appendChild(_ax)}
     _at.children[3].className="c-spot";_at.title=T("Clicca per sintonizzare {0}",_as.call);
     _at.classList.toggle("hot",_aq-_as.t<120000);_at.classList.toggle("seen",chase.done.has(_as.call));
-    _at.onclick=()=>{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto uno spot."));if(rig.port)cat.setFreq(_as.hz);try{hqLookup(_as.call)}catch(_ay){}};
+    _at.onclick=()=>{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto uno spot."),"clic su spot");if(rig.port)cat.setFreq(_as.hz);try{hqLookup(_as.call)}catch(_ay){}};
     _ar.appendChild(_at)}
   _ap.textContent="";_ap.appendChild(_ar);
 }
@@ -4376,7 +4381,7 @@ $("clBtn").onclick=clConnect;
 var chase={on:false,phase:"",target:null,t0:0,lastAct:0,heard:false,got:false,interest:false,expect:0,visited:new Map(),done:new Set(),n:0,tick:0,pickAt:0,miss:{},mute:{},band:null};
 const CHASE={empty:18000,afterGot:20000,firstWait:10000,bandWait:3500,boring:30000,quiet:12000,maxDwell:90000,coolDone:20*60000,coolMiss:8*60000,respot:90000,maxAge:10*60000,muteAfter:3,mute:10*60000};
 function chaseStart(){
-  if(chase.on){chaseStop(T("Inseguimento fermato."));return}
+  if(chase.on){chaseStop(T("Inseguimento fermato."),"tasto o menu");return}
   if(!CLAPI){msg(T("Il cluster funziona nell'app per Mac e Windows."),true);return}
   if(!rig.port){msg(T("Collega il CAT per inseguire gli spot."),true);return}
   if(mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”."),true);return}
@@ -4385,79 +4390,79 @@ function chaseStart(){
   chase.on=true;chase.phase="pick";chase.pickAt=Date.now()+500;chase.n=0;chase.miss={};chase.mute={};
   chase.expect=0;chase.off=0;chase.resent=false;chase.setAt=Date.now();chase.target=null;
   chase.band=CLF.chase==="cur"?(curBand()||[null])[0]:null;
-  $("chaseBtn").setAttribute("aria-pressed","true");$("chaseBtn").textContent=T("■ Ferma inseguimento");
+  $("chaseBtn").setAttribute("aria-pressed","true");$("chaseBtn").textContent=T("■ Ferma inseguimento");evLog("inseguimento avviato",CLF.chase);
   msg(T("Inseguo gli spot CW del cluster: vado sul più fresco, decodifico e passo al successivo."));
   if(typeof menuState==="function")menuState();
 }
-function chaseStop(_aT){
-  const _aU=chase.on;chase.on=false;chase.phase="";chase.target=null;
+function chaseStop(_aT,_aU){
+  const _aV=chase.on;if(_aV)evLog("inseguimento fermo",(_aU||"")+(_aT?" "+_aT:"")+(chase.target?" su "+chase.target.call:""));chase.on=false;chase.phase="";chase.target=null;
   $("chaseBtn").setAttribute("aria-pressed","false");$("chaseBtn").textContent=T("◎ Insegui gli spot");
-  if(_aU){$("scanInfo").textContent=(_aT?_aT+" ":"")+(chase.done.size?T("decodificati {0}",chase.done.size):"");if(_aT)msg(_aT)}
+  if(_aV){$("scanInfo").textContent=(_aT?_aT+" ":"")+(chase.done.size?T("decodificati {0}",chase.done.size):"");if(_aT)msg(_aT)}
   if(typeof menuState==="function")menuState();
 }
-const bandName=_aV=>/cm/.test(_aV)?_aV.replace("cm"," cm"):_aV+" m";
-function chaseFree(_aW,_aX){const _aY=chase.visited.get(_aW.call);if(!_aY)return true;
-  if(chase.done.has(_aW.call))return _aX-_aY>CHASE.coolDone;
-  const _aZ=(chase.empty&&chase.empty.get(_aW.call))||0;
-  if(_aZ>=2)return _aX-_aY>CHASE.coolMiss*Math.min(_aZ,5);
-  return (_aW.t>_aY+30000&&_aX-_aY>CHASE.respot)||_aX-_aY>CHASE.coolMiss}
+const bandName=_aW=>/cm/.test(_aW)?_aW.replace("cm"," cm"):_aW+" m";
+function chaseFree(_aX,_aY){const _aZ=chase.visited.get(_aX.call);if(!_aZ)return true;
+  if(chase.done.has(_aX.call))return _aY-_aZ>CHASE.coolDone;
+  const _ba=(chase.empty&&chase.empty.get(_aX.call))||0;
+  if(_ba>=2)return _aY-_aZ>CHASE.coolMiss*Math.min(_ba,5);
+  return (_aX.t>_aZ+30000&&_aY-_aZ>CHASE.respot)||_aY-_aZ>CHASE.coolMiss}
 function chaseBandSel(){return CLF.chase==="cur"?(chase.band||((curBand()||[null])[0])||"cur"):CLF.chase}
-let SKQ={};try{SKQ=JSON.parse(localStorage.getItem("cwiu-skq")||"{}")||{}}catch(_ba){SKQ={}}
-function skqNote(_bb,_bc,_bd){if(!_bb||!_bc||!_bc.size)return;const _be=SKQ[_bb]||(SKQ[_bb]={});
-  for(const _bf of _bc){const _bg=_be[_bf]||(_be[_bf]=[0,0]);_bg[0]++;if(_bd)_bg[1]++;if(_bg[0]>40){_bg[0]/=2;_bg[1]/=2}}
-  const _bh=Object.keys(_be);if(_bh.length>400)for(const _bi of _bh.sort((_bj,_bk)=>_be[_bj][0]-_be[_bk][0]).slice(0,_bh.length-300))delete _be[_bi];
-  try{localStorage.setItem("cwiu-skq",JSON.stringify(SKQ))}catch(_bl){}}
-function skqAff(_bm){const _bn=bandOf(_bm.hz),_bo=_bn&&SKQ[_bn[0]];if(!_bm.near||!_bm.near.size)return 0.2;let _bp=0;
-  for(const _bq of _bm.near){const _br=_bo&&_bo[_bq];const _bs=_br?(_br[1]+1)/(_br[0]+3):1/3;if(_bs>_bp)_bp=_bs}return _bp}
+let SKQ={};try{SKQ=JSON.parse(localStorage.getItem("cwiu-skq")||"{}")||{}}catch(_bb){SKQ={}}
+function skqNote(_bc,_bd,_be){if(!_bc||!_bd||!_bd.size)return;const _bf=SKQ[_bc]||(SKQ[_bc]={});
+  for(const _bg of _bd){const _bh=_bf[_bg]||(_bf[_bg]=[0,0]);_bh[0]++;if(_be)_bh[1]++;if(_bh[0]>40){_bh[0]/=2;_bh[1]/=2}}
+  const _bi=Object.keys(_bf);if(_bi.length>400)for(const _bj of _bi.sort((_bk,_bl)=>_bf[_bk][0]-_bf[_bl][0]).slice(0,_bi.length-300))delete _bf[_bj];
+  try{localStorage.setItem("cwiu-skq",JSON.stringify(SKQ))}catch(_bm){}}
+function skqAff(_bn){const _bo=bandOf(_bn.hz),_bp=_bo&&SKQ[_bo[0]];if(!_bn.near||!_bn.near.size)return 0.2;let _bq=0;
+  for(const _br of _bn.near){const _bs=_bp&&_bp[_br];const _bt=_bs?(_bs[1]+1)/(_bs[0]+3):1/3;if(_bt>_bq)_bq=_bt}return _bq}
 function chasePick(){
-  const _bt=Date.now(),_bu=chaseBandSel();
-  let _bv=[...CL.spots.values()].filter(_bw=>_bt-_bw.t<CHASE.maxAge&&bandOf(_bw.hz)&&clPass(_bw,_bu)&&chaseFree(_bw,_bt));
-  if(_bu==="all"){const _bx=_bv.filter(_by=>!((chase.mute[bandOf(_by.hz)[0]]||0)>_bt));if(_bx.length)_bv=_bx}
-  if(!_bv.length){$("scanInfo").textContent=CL.state==="online"?(_bu==="all"||_bu==="cur"?T("attendo spot nuovi…"):T("attendo spot nuovi sui {0}…",bandName(_bu))):T("collego il cluster…");chase.pickAt=_bt+3000;return}
-  const _bz=curBand(),_bA=_bB=>{const _bC=(_bt-(_bB.tNear||_bB.t))/60000,_bD=_bB.near?_bB.near.size:0;
-    return -_bC*1.5+Math.log2(1+_bD)*2.5+(_bD?0:-3)+Math.log2(1+_bB.n)*0.7+((_bB.dbNear!=null?_bB.dbNear:_bB.db!=null?_bB.db-6:8)/8)+(/\bCQ\b/.test(_bB.info||"")?1.5:0)
-      +(skqAff(_bB)-1/3)*7+(chase.done.has(_bB.call)?-7:0)+(_bu==="all"&&_bz&&bandOf(_bB.hz)===_bz?3:0)};
-  _bv.sort((_bE,_bF)=>_bA(_bF)-_bA(_bE));const _bG=_bv[0];
-  const _bH=!_bz||bandOf(_bG.hz)!==_bz;
-  chase.target=_bG;chase.visited.set(_bG.call,_bt);chase.n++;
-  const _bI=Math.round(_bG.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.arm=Math.random()<0.5?CHASE.empty:CHASE.boring;
-  chase.expect=_bI;chase.setAt=_bt;chase.off=0;chase.resent=false;cat.setFreq(_bI);WF.avg=null;
-  chase.phase="dwell";chase.t0=_bt;chase.lastAct=_bt;chase.heard=false;chase.got=false;chase.interest=false;chase.weak=false;chase.wait=CHASE.firstWait+(_bH?CHASE.bandWait:0);
+  const _bu=Date.now(),_bv=chaseBandSel();
+  let _bw=[...CL.spots.values()].filter(_bx=>_bu-_bx.t<CHASE.maxAge&&bandOf(_bx.hz)&&clPass(_bx,_bv)&&chaseFree(_bx,_bu));
+  if(_bv==="all"){const _by=_bw.filter(_bz=>!((chase.mute[bandOf(_bz.hz)[0]]||0)>_bu));if(_by.length)_bw=_by}
+  if(!_bw.length){$("scanInfo").textContent=CL.state==="online"?(_bv==="all"||_bv==="cur"?T("attendo spot nuovi…"):T("attendo spot nuovi sui {0}…",bandName(_bv))):T("collego il cluster…");chase.pickAt=_bu+3000;return}
+  const _bA=curBand(),_bB=_bC=>{const _bD=(_bu-(_bC.tNear||_bC.t))/60000,_bE=_bC.near?_bC.near.size:0;
+    return -_bD*1.5+Math.log2(1+_bE)*2.5+(_bE?0:-3)+Math.log2(1+_bC.n)*0.7+((_bC.dbNear!=null?_bC.dbNear:_bC.db!=null?_bC.db-6:8)/8)+(/\bCQ\b/.test(_bC.info||"")?1.5:0)
+      +(skqAff(_bC)-1/3)*7+(chase.done.has(_bC.call)?-7:0)+(_bv==="all"&&_bA&&bandOf(_bC.hz)===_bA?3:0)};
+  _bw.sort((_bF,_bG)=>_bB(_bG)-_bB(_bF));const _bH=_bw[0];
+  const _bI=!_bA||bandOf(_bH.hz)!==_bA;
+  chase.target=_bH;chase.visited.set(_bH.call,_bu);chase.n++;
+  const _bJ=Math.round(_bH.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.arm=Math.random()<0.5?CHASE.empty:CHASE.boring;
+  chase.expect=_bJ;chase.setAt=_bu;chase.off=0;chase.resent=false;cat.setFreq(_bJ);WF.avg=null;
+  chase.phase="dwell";chase.t0=_bu;chase.lastAct=_bu;chase.heard=false;chase.got=false;chase.interest=false;chase.weak=false;chase.wait=CHASE.firstWait+(_bI?CHASE.bandWait:0);
 }
-function chaseLeave(_bJ){const _bK=chase.target,_bL=_bK&&bandOf(_bK.hz);
-  try{if(_bK&&LOGAPI){const _bM=MSG.list.filter(_bN=>_bN.t>=chase.t0-1500&&_bN.rf&&Math.abs(_bN.rf-_bK.hz)<400),_bO=_bM.find(_bP=>(_bP.text||"").split(" ").some(_bQ=>_bQ===_bK.call||(_bQ.length>=4&&lev1(_bQ,_bK.call)===1)))||null;
-    const _bR=!chase.got?"":_bO&&_bO.stack?"somma":_bO&&_bO.v2?"v2":"normale",_bS=_bO||_bM.slice().sort((_bT,_bU)=>(_bU.text||"").length-(_bT.text||"").length)[0],_bV=_bW=>'"'+String(_bW==null?"":_bW).replace(/"/g,"'")+'"';
-    let _bX="";try{const _bY=_bM.length>0||(STK.at>chase.t0&&STK.bursts>0);if(_bY&&(!chase.got||_bR==="somma"))_bX=clipSave("clip-"+dUTC(_bJ).replace(/-/g,"")+"-"+hUTC(chase.t0).replace(/:/g,"")+"-"+Math.round(_bK.khz)+"-"+_bK.call,(_bJ-chase.t0)/1000+1.5)}catch(_bZ){}
-    LOGAPI.append("inseguimento-"+dUTC(_bJ)+".csv","utc;banda;khz;nominativo;db_vicini;db;skimmer_vicini;skimmer;secondi;sentito;debole;letto;come;tratti;messaggi;testo;affinita;ritaglio;prova",
-      [hUTC(chase.t0),_bL?_bL[0]:"",_bK.khz.toFixed(1),_bK.call,_bK.dbNear==null?"":_bK.dbNear,_bK.db==null?"":_bK.db,_bK.near?_bK.near.size:0,_bK.n,Math.round((_bJ-chase.t0)/1000),chase.heard?1:0,chase.weak?1:0,chase.got?1:0,_bR,STK.bursts||0,_bM.length,_bV(_bS?_bS.text:""),skqAff(_bK).toFixed(2),_bX,"e"+Math.round((chase.arm||CHASE.empty)/1000)].join(";")).catch(()=>{})}}catch(_ca){}
-  try{if(_bK){chase.empty=chase.empty||new Map();const _cb=chase.got||(STK.at>chase.t0&&STK.bursts>0)||MSG.list.some(_cc=>_cc.t>=chase.t0-1500&&_cc.rf&&Math.abs(_cc.rf-_bK.hz)<400);if(_cb)chase.empty.delete(_bK.call);else chase.empty.set(_bK.call,(chase.empty.get(_bK.call)||0)+1)}}catch(_cd){}
-  try{if(_bK&&_bL){const _ce=chase.got||(STK.bursts||0)>0||MSG.list.some(_cf=>_cf.t>=chase.t0-1500&&_cf.rf&&Math.abs(_cf.rf-_bK.hz)<400);skqNote(_bL[0],_bK.near,_ce)}}catch(_cg){}
-  if(_bL){const _ch=_bL[0];if(chase.heard){chase.miss[_ch]=0}else if((chase.miss[_ch]=(chase.miss[_ch]||0)+1)>=CHASE.muteAfter&&CLF.chase==="all"){chase.mute[_ch]=_bJ+CHASE.mute;chase.miss[_ch]=0;msg(T("Inseguimento: sui {0} non sento niente, la salto per 10 minuti.",bandName(_ch)))}}
-  chase.phase="pick";chase.pickAt=_bJ+600}
-function chaseTick(_ci){
-  if(!chase.on||!dec)return;if(_ci-chase.tick<500)return;chase.tick=_ci;const _cj=Date.now();
-  if(chase.expect&&rig.freq&&Math.abs(rig.freq-chase.expect)>150&&_cj-chase.setAt>3000){
-    if(chase.prevF&&Math.abs(rig.freq-chase.prevF)<=150){chase.off=0;chase.setAt=_cj;chase.tries=(chase.tries||0)+1;
-      if(chase.tries>6){chase.tries=0;chase.expect=0;chase.phase="pick";chase.pickAt=_cj+1500;return}
+function chaseLeave(_bK){const _bL=chase.target,_bM=_bL&&bandOf(_bL.hz);
+  try{if(_bL&&LOGAPI){const _bN=MSG.list.filter(_bO=>_bO.t>=chase.t0-1500&&_bO.rf&&Math.abs(_bO.rf-_bL.hz)<400),_bP=_bN.find(_bQ=>(_bQ.text||"").split(" ").some(_bR=>_bR===_bL.call||(_bR.length>=4&&lev1(_bR,_bL.call)===1)))||null;
+    const _bS=!chase.got?"":_bP&&_bP.stack?"somma":_bP&&_bP.v2?"v2":"normale",_bT=_bP||_bN.slice().sort((_bU,_bV)=>(_bV.text||"").length-(_bU.text||"").length)[0],_bW=_bX=>'"'+String(_bX==null?"":_bX).replace(/"/g,"'")+'"';
+    let _bY="";try{const _bZ=_bN.length>0||(STK.at>chase.t0&&STK.bursts>0);if(_bZ&&(!chase.got||_bS==="somma"))_bY=clipSave("clip-"+dUTC(_bK).replace(/-/g,"")+"-"+hUTC(chase.t0).replace(/:/g,"")+"-"+Math.round(_bL.khz)+"-"+_bL.call,(_bK-chase.t0)/1000+1.5)}catch(_ca){}
+    LOGAPI.append("inseguimento-"+dUTC(_bK)+".csv","utc;banda;khz;nominativo;db_vicini;db;skimmer_vicini;skimmer;secondi;sentito;debole;letto;come;tratti;messaggi;testo;affinita;ritaglio;prova",
+      [hUTC(chase.t0),_bM?_bM[0]:"",_bL.khz.toFixed(1),_bL.call,_bL.dbNear==null?"":_bL.dbNear,_bL.db==null?"":_bL.db,_bL.near?_bL.near.size:0,_bL.n,Math.round((_bK-chase.t0)/1000),chase.heard?1:0,chase.weak?1:0,chase.got?1:0,_bS,STK.bursts||0,_bN.length,_bW(_bT?_bT.text:""),skqAff(_bL).toFixed(2),_bY,"e"+Math.round((chase.arm||CHASE.empty)/1000)].join(";")).catch(()=>{})}}catch(_cb){}
+  try{if(_bL){chase.empty=chase.empty||new Map();const _cc=chase.got||(STK.at>chase.t0&&STK.bursts>0)||MSG.list.some(_cd=>_cd.t>=chase.t0-1500&&_cd.rf&&Math.abs(_cd.rf-_bL.hz)<400);if(_cc)chase.empty.delete(_bL.call);else chase.empty.set(_bL.call,(chase.empty.get(_bL.call)||0)+1)}}catch(_ce){}
+  try{if(_bL&&_bM){const _cf=chase.got||(STK.bursts||0)>0||MSG.list.some(_cg=>_cg.t>=chase.t0-1500&&_cg.rf&&Math.abs(_cg.rf-_bL.hz)<400);skqNote(_bM[0],_bL.near,_cf)}}catch(_ch){}
+  if(_bM){const _ci=_bM[0];if(chase.heard){chase.miss[_ci]=0}else if((chase.miss[_ci]=(chase.miss[_ci]||0)+1)>=CHASE.muteAfter&&CLF.chase==="all"){chase.mute[_ci]=_bK+CHASE.mute;chase.miss[_ci]=0;msg(T("Inseguimento: sui {0} non sento niente, la salto per 10 minuti.",bandName(_ci)))}}
+  chase.phase="pick";chase.pickAt=_bK+600}
+function chaseTick(_cj){
+  if(!chase.on||!dec)return;if(_cj-chase.tick<500)return;chase.tick=_cj;const _ck=Date.now();
+  if(chase.expect&&rig.freq&&Math.abs(rig.freq-chase.expect)>150&&_ck-chase.setAt>3000){
+    if(chase.prevF&&Math.abs(rig.freq-chase.prevF)<=150){chase.off=0;chase.setAt=_ck;chase.tries=(chase.tries||0)+1;
+      if(chase.tries>6){chase.tries=0;chase.expect=0;chase.phase="pick";chase.pickAt=_ck+1500;return}
       cat.setFreq(chase.expect)}
     // la radio è andata altrove: si riprova una volta, poi è davvero un cambio a mano
-    else if(!chase.resent){chase.resent=true;chase.setAt=_cj;chase.off=0;cat.setFreq(chase.expect)}
+    else if(!chase.resent){chase.resent=true;chase.setAt=_ck;chase.off=0;cat.setFreq(chase.expect)}
     else if(++chase.off>=3){chaseStop(T("Inseguimento fermato: la frequenza è stata cambiata a mano."));return}}
   else{chase.off=0;if(chase.expect&&rig.freq&&Math.abs(rig.freq-chase.expect)<=150)chase.tries=0}
-  if(chase.phase==="pick"){if(_cj>=chase.pickAt)chasePick();return}
-  const _ck=chase.target,_cl=rig.pitch||dec.freq,_cm=_cn=>_cn.key||(_cn.hops-_cn.lastMarkHop)*_cn.msHop<1200;
-  if(_cm(dec)||SK.list.some(_co=>Math.abs(_co.f-_cl)<150&&_cm(_co.d))){chase.lastAct=_cj;chase.heard=true}
-  try{if(!chase.got&&STK.bursts>0&&STK.at>chase.t0+6000&&_cj-STK.at<12000&&_cj-chase.t0<60000){chase.lastAct=_cj;chase.heard=true;chase.weak=true}}catch(_cp){}
-  const _cq=MSG.list.filter(_cr=>_cr.t>=chase.t0-1500&&_cr.rf&&Math.abs(_cr.rf-_ck.hz)<400);
-  const _cs=_ct=>_ct.from===_ck.call||(_ct.text||"").split(" ").some(_cu=>_cu===_ck.call||(_cu.length>=4&&typeof lev1==="function"&&lev1(_cu,_ck.call)===1));
-  if(!chase.got&&_cq.some(_cs)){chase.got=true;chase.gotAt=_cj;chase.done.add(_ck.call);CL.dirty=true}
-  if(!chase.interest&&_cq.some(_cv=>(_cv.from&&!_cv.spotGuess)||/^(CQ|QSO|Rapporto|Saluti)/.test(_cv.type||"")))chase.interest=true;
-  const _cw=Math.round((_cj-chase.t0)/1000),_cx=bandOf(_ck.hz);
-  $("scanInfo").textContent=T("{0} su {1} kHz · {2} s · {3}",_ck.call,_ck.khz.toFixed(1),_cw,chase.got?T("decodificato"):chase.weak&&!chase.interest?T("segnale debole, sommo le ripetizioni…"):chase.heard?T("decodifico…"):T("attendo segnali"))+(_cx&&CLF.chase!=="all"?"":" · "+(_cx?bandName(_cx[0]):""))+(chase.done.size?" · ✓ "+chase.done.size:"");
-  const _cy=SK.list.some(_cz=>_cz.msg&&_cz.msg.live&&Math.abs(_cz.f-_cl)<150&&_cm(_cz.d));
-  const _cA=!chase.got&&!_cq.length&&!_cy&&_cj-chase.t0>(chase.arm||CHASE.empty)+(chase.wait>CHASE.firstWait?CHASE.bandWait:0)&&!(STK.at>chase.t0&&STK.bursts>0);
-  const _cB=_cA||(!chase.heard&&_cj-chase.t0>chase.wait)||(!chase.got&&!chase.interest&&_cj-chase.t0>(chase.weak?60000:CHASE.boring)&&!_cy)||(chase.heard&&_cj-chase.lastAct>CHASE.quiet)||_cj-chase.t0>CHASE.maxDwell||(chase.got&&_cj-chase.gotAt>CHASE.afterGot&&!_cy);
-  if(_cB)chaseLeave(_cj);
+  if(chase.phase==="pick"){if(_ck>=chase.pickAt)chasePick();return}
+  const _cl=chase.target,_cm=rig.pitch||dec.freq,_cn=_co=>_co.key||(_co.hops-_co.lastMarkHop)*_co.msHop<1200;
+  if(_cn(dec)||SK.list.some(_cp=>Math.abs(_cp.f-_cm)<150&&_cn(_cp.d))){chase.lastAct=_ck;chase.heard=true}
+  try{if(!chase.got&&STK.bursts>0&&STK.at>chase.t0+6000&&_ck-STK.at<12000&&_ck-chase.t0<60000){chase.lastAct=_ck;chase.heard=true;chase.weak=true}}catch(_cq){}
+  const _cr=MSG.list.filter(_cs=>_cs.t>=chase.t0-1500&&_cs.rf&&Math.abs(_cs.rf-_cl.hz)<400);
+  const _ct=_cu=>_cu.from===_cl.call||(_cu.text||"").split(" ").some(_cv=>_cv===_cl.call||(_cv.length>=4&&typeof lev1==="function"&&lev1(_cv,_cl.call)===1));
+  if(!chase.got&&_cr.some(_ct)){chase.got=true;chase.gotAt=_ck;chase.done.add(_cl.call);CL.dirty=true}
+  if(!chase.interest&&_cr.some(_cw=>(_cw.from&&!_cw.spotGuess)||/^(CQ|QSO|Rapporto|Saluti)/.test(_cw.type||"")))chase.interest=true;
+  const _cx=Math.round((_ck-chase.t0)/1000),_cy=bandOf(_cl.hz);
+  $("scanInfo").textContent=T("{0} su {1} kHz · {2} s · {3}",_cl.call,_cl.khz.toFixed(1),_cx,chase.got?T("decodificato"):chase.weak&&!chase.interest?T("segnale debole, sommo le ripetizioni…"):chase.heard?T("decodifico…"):T("attendo segnali"))+(_cy&&CLF.chase!=="all"?"":" · "+(_cy?bandName(_cy[0]):""))+(chase.done.size?" · ✓ "+chase.done.size:"");
+  const _cz=SK.list.some(_cA=>_cA.msg&&_cA.msg.live&&Math.abs(_cA.f-_cm)<150&&_cn(_cA.d));
+  const _cB=!chase.got&&!_cr.length&&!_cz&&_ck-chase.t0>(chase.arm||CHASE.empty)+(chase.wait>CHASE.firstWait?CHASE.bandWait:0)&&!(STK.at>chase.t0&&STK.bursts>0);
+  const _cC=_cB||(!chase.heard&&_ck-chase.t0>chase.wait)||(!chase.got&&!chase.interest&&_ck-chase.t0>(chase.weak?60000:CHASE.boring)&&!_cz)||(chase.heard&&_ck-chase.lastAct>CHASE.quiet)||_ck-chase.t0>CHASE.maxDwell||(chase.got&&_ck-chase.gotAt>CHASE.afterGot&&!_cz);
+  if(_cC)chaseLeave(_ck);
 }
 $("chaseBtn").onclick=chaseStart;
 setInterval(()=>{if(CL.dirty&&!document.hidden)clRender()},1000);
@@ -4513,7 +4518,8 @@ function keyText(_z,_A){
   _z=String(_z||"").toUpperCase().replace(/[^A-Z0-9 \/?.,=+\-]/g,"").replace(/\s+/g," ").trim();if(!_z)return;
   const _B=qsoCanTx();if(_B){msg(_B,true);return}
   if(QSO.txing)qsoHalt();
-  if(chase.on)chaseStop();if(hunt.on)huntStop();if(scan.on)scanStop(true);
+  evLog("trasmissione",_A||"testo libero");
+  if(chase.on)chaseStop(undefined,"trasmissione");if(hunt.on)huntStop();if(scan.on)scanStop(true);
   qsoPrepRadio();
   if(!QSO.freq||Math.abs(QSO.freq-rig.freq)>2000){QSO.freq=rig.freq;QSO.pitch=rig.pitch||(dec&&dec.freq)||600}
   if(!QSO.t0&&QSO.call)QSO.t0=Date.now();
@@ -4543,7 +4549,7 @@ function qsoNew(){QSO.call="";QSO.rstS="599";QSO.rstR="";QSO.op="";QSO.qth="";QS
 function rstFromSnr(_V){return _V>=28?"599":_V>=18?"579":"559"}
 function setDx(_W,_X,_Y){
   QSO.call=_W;QSO.t0=0;QSO.rstR="";QSO.op="";QSO.qth="";QSO.grid="";QSO.srx="";
-  if(_X){QSO.rstS=rstFromSnr(_X.db||20);if(!_Y&&_X.rf&&rig.port&&Math.abs(_X.rf-rig.freq)>60&&!QSO.txing){try{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto una stazione."))}catch(_Z){}cat.setFreq(Math.round(_X.rf/10)*10)}QSO.freq=_X.rf||rig.freq;absorbFrom(_X)}
+  if(_X){QSO.rstS=rstFromSnr(_X.db||20);if(!_Y&&_X.rf&&rig.port&&Math.abs(_X.rf-rig.freq)>60&&!QSO.txing){try{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto una stazione."),"clic su stazione")}catch(_Z){}cat.setFreq(Math.round(_X.rf/10)*10)}QSO.freq=_X.rf||rig.freq;absorbFrom(_X)}
   const _aa=MYCALL();QSO.next=_X&&_aa&&(_X.text||"").split(" ").some(_ab=>sameCall(_ab,_aa))?"report":"answer";
   hqLookup(_W);
   $("qDx").value=_W;qsoUi();qsoRenderRx()}
@@ -4792,19 +4798,22 @@ try{hqRender()}catch(_eM){}
 <script>
 let colorsAt=0,menuAt=0,menuKey="";
 function fit(_a){const _b=window.devicePixelRatio||1,_c=Math.round(_a.clientWidth*_b),_d=Math.round(_a.clientHeight*_b);if(_a.width!==_c||_a.height!==_d){_a.width=_c;_a.height=_d}return [_c,_d,_b]}
-function draw(_e){
-  if(_e-colorsAt>2000){colorsAt=_e;try{readWfPal()}catch(_f){}}
-  try{drawWF(_e)}catch(_g){}
-  try{skimTick(_e)}catch(_h){}
-  try{huntTick(_e)}catch(_i){}
-  try{chaseTick(_e)}catch(_j){}
-  if(_e-menuAt>400){menuAt=_e;try{const _k=[mode,!!rig.port,rig.cw,hunt.on,chase.on,REC.on].join();if(_k!==menuKey){menuKey=_k;menuState()}}catch(_l){}}
+let DRAW_AT=0,BG_AT=0;
+function bgTick(){const _e=performance.now();if(_e-DRAW_AT<1500||_e-BG_AT<400)return;BG_AT=_e;try{skimTick(_e)}catch(_f){}try{huntTick(_e)}catch(_g){}try{chaseTick(_e)}catch(_h){}}
+function draw(_i){
+  DRAW_AT=performance.now();
+  if(_i-colorsAt>2000){colorsAt=_i;try{readWfPal()}catch(_j){}}
+  try{drawWF(_i)}catch(_k){}
+  try{skimTick(_i)}catch(_l){}
+  try{huntTick(_i)}catch(_m){}
+  try{chaseTick(_i)}catch(_n){}
+  if(_i-menuAt>400){menuAt=_i;try{const _o=[mode,!!rig.port,rig.cw,hunt.on,chase.on,REC.on].join();if(_o!==menuKey){menuKey=_o;menuState()}}catch(_p){}}
   if(dec){
     $("roHz").textContent=Math.round(dec.freq);$("roWpm").textContent=dec.marks.length>=3?Math.round(dec.wpm):"—";
     $("roSnr").textContent=dec.peak>1e-5?Math.round(dec.snr):"—";
-    if(mode==="mic"){const _m=inPeak>1e-5?20*Math.log10(inPeak):-99;
-      $("inFill").style.width=Math.max(0,Math.min(100,(_m+60)/60*100))+"%";$("inFill").classList.toggle("hot",_m>-1);
-      $("inDb").textContent=(_m<-90?"—":Math.round(_m))+" dBFS"+(_m>-1?" · "+T("alto"):_m<-45&&_m>-90?" · "+T("basso"):"")}
+    if(mode==="mic"){const _q=inPeak>1e-5?20*Math.log10(inPeak):-99;
+      $("inFill").style.width=Math.max(0,Math.min(100,(_q+60)/60*100))+"%";$("inFill").classList.toggle("hot",_q>-1);
+      $("inDb").textContent=(_q<-90?"—":Math.round(_q))+" dBFS"+(_q>-1?" · "+T("alto"):_q<-45&&_q>-90?" · "+T("basso"):"")}
   }
   requestAnimationFrame(draw);
 }
