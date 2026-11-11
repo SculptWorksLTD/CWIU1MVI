@@ -34,11 +34,12 @@ contextBridge.exposeInMainWorld('cwiuRigger', {
   write: (_D) => ipcRenderer.invoke('rigger-write', _D),
   close: () => ipcRenderer.invoke('rigger-close'),
   onData: (_E) => ipcRenderer.on('rigger-data', (_F, _G) => _E(_G)),
+  onClosed: (_H) => ipcRenderer.on('rigger-closed', (_I, _J) => _H(String(_J))),
 });
 contextBridge.exposeInMainWorld('cwiuHamqth', {
-  set: (_H, _I) => ipcRenderer.invoke('hq-set', { user:_H, pass:_I }),
+  set: (_K, _L) => ipcRenderer.invoke('hq-set', { user:_K, pass:_L }),
   status: () => ipcRenderer.invoke('hq-status'),
   test: () => ipcRenderer.invoke('hq-test'),
-  lookup: (_J) => ipcRenderer.invoke('hq-lookup', _J),
-  upload: (_K) => ipcRenderer.invoke('hq-upload', _K),
+  lookup: (_M) => ipcRenderer.invoke('hq-lookup', _M),
+  upload: (_N) => ipcRenderer.invoke('hq-upload', _N),
 });

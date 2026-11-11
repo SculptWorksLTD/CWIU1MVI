@@ -1,9 +1,9 @@
 {
-  "web": "1.12.11",
+  "web": "1.12.12",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.11.html",
-  "size": 607745,
-  "sha256": "011f755a39d95e07bde4aa8eedb40d0eb4ebd2e174148e2653e3c4d2378c0ffe",
-  "date": "2026-11-11 19:37 UTC",
-  "notes": "Il registro degli eventi ora si scrive davvero"
+  "file": "cwiu1mvi-1.12.12.html",
+  "size": 610022,
+  "sha256": "666447a7d58932d600e376cc05d39915c9ea9d1f0b11952ef6af835fb5d991b8",
+  "date": "2026-11-11 19:52 UTC",
+  "notes": "The Rigger: ricollegamento automatico quando la porta torna"
 }
