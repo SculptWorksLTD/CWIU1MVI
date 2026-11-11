@@ -3905,7 +3905,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.3";
+const WEB_VERSION="1.12.4";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4392,15 +4392,16 @@ function chasePick(){
   _bv.sort((_bE,_bF)=>_bA(_bF)-_bA(_bE));const _bG=_bv[0];
   const _bH=!_bz||bandOf(_bG.hz)!==_bz;
   chase.target=_bG;chase.visited.set(_bG.call,_bt);chase.n++;
-  const _bI=Math.round(_bG.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.expect=_bI;chase.setAt=_bt;chase.off=0;chase.resent=false;cat.setFreq(_bI);WF.avg=null;
+  const _bI=Math.round(_bG.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.arm=Math.random()<0.5?CHASE.empty:CHASE.boring;
+  chase.expect=_bI;chase.setAt=_bt;chase.off=0;chase.resent=false;cat.setFreq(_bI);WF.avg=null;
   chase.phase="dwell";chase.t0=_bt;chase.lastAct=_bt;chase.heard=false;chase.got=false;chase.interest=false;chase.weak=false;chase.wait=CHASE.firstWait+(_bH?CHASE.bandWait:0);
 }
 function chaseLeave(_bJ){const _bK=chase.target,_bL=_bK&&bandOf(_bK.hz);
   try{if(_bK&&LOGAPI){const _bM=MSG.list.filter(_bN=>_bN.t>=chase.t0-1500&&_bN.rf&&Math.abs(_bN.rf-_bK.hz)<400),_bO=_bM.find(_bP=>(_bP.text||"").split(" ").some(_bQ=>_bQ===_bK.call||(_bQ.length>=4&&lev1(_bQ,_bK.call)===1)))||null;
     const _bR=!chase.got?"":_bO&&_bO.stack?"somma":_bO&&_bO.v2?"v2":"normale",_bS=_bO||_bM.slice().sort((_bT,_bU)=>(_bU.text||"").length-(_bT.text||"").length)[0],_bV=_bW=>'"'+String(_bW==null?"":_bW).replace(/"/g,"'")+'"';
     let _bX="";try{const _bY=_bM.length>0||(STK.at>chase.t0&&STK.bursts>0);if(_bY&&(!chase.got||_bR==="somma"))_bX=clipSave("clip-"+dUTC(_bJ).replace(/-/g,"")+"-"+hUTC(chase.t0).replace(/:/g,"")+"-"+Math.round(_bK.khz)+"-"+_bK.call,(_bJ-chase.t0)/1000+1.5)}catch(_bZ){}
-    LOGAPI.append("inseguimento-"+dUTC(_bJ)+".csv","utc;banda;khz;nominativo;db_vicini;db;skimmer_vicini;skimmer;secondi;sentito;debole;letto;come;tratti;messaggi;testo;affinita;ritaglio",
-      [hUTC(chase.t0),_bL?_bL[0]:"",_bK.khz.toFixed(1),_bK.call,_bK.dbNear==null?"":_bK.dbNear,_bK.db==null?"":_bK.db,_bK.near?_bK.near.size:0,_bK.n,Math.round((_bJ-chase.t0)/1000),chase.heard?1:0,chase.weak?1:0,chase.got?1:0,_bR,STK.bursts||0,_bM.length,_bV(_bS?_bS.text:""),skqAff(_bK).toFixed(2),_bX].join(";")).catch(()=>{})}}catch(_ca){}
+    LOGAPI.append("inseguimento-"+dUTC(_bJ)+".csv","utc;banda;khz;nominativo;db_vicini;db;skimmer_vicini;skimmer;secondi;sentito;debole;letto;come;tratti;messaggi;testo;affinita;ritaglio;prova",
+      [hUTC(chase.t0),_bL?_bL[0]:"",_bK.khz.toFixed(1),_bK.call,_bK.dbNear==null?"":_bK.dbNear,_bK.db==null?"":_bK.db,_bK.near?_bK.near.size:0,_bK.n,Math.round((_bJ-chase.t0)/1000),chase.heard?1:0,chase.weak?1:0,chase.got?1:0,_bR,STK.bursts||0,_bM.length,_bV(_bS?_bS.text:""),skqAff(_bK).toFixed(2),_bX,"e"+Math.round((chase.arm||CHASE.empty)/1000)].join(";")).catch(()=>{})}}catch(_ca){}
   try{if(_bK){chase.empty=chase.empty||new Map();const _cb=chase.got||(STK.at>chase.t0&&STK.bursts>0)||MSG.list.some(_cc=>_cc.t>=chase.t0-1500&&_cc.rf&&Math.abs(_cc.rf-_bK.hz)<400);if(_cb)chase.empty.delete(_bK.call);else chase.empty.set(_bK.call,(chase.empty.get(_bK.call)||0)+1)}}catch(_cd){}
   try{if(_bK&&_bL){const _ce=chase.got||(STK.bursts||0)>0||MSG.list.some(_cf=>_cf.t>=chase.t0-1500&&_cf.rf&&Math.abs(_cf.rf-_bK.hz)<400);skqNote(_bL[0],_bK.near,_ce)}}catch(_cg){}
   if(_bL){const _ch=_bL[0];if(chase.heard){chase.miss[_ch]=0}else if((chase.miss[_ch]=(chase.miss[_ch]||0)+1)>=CHASE.muteAfter&&CLF.chase==="all"){chase.mute[_ch]=_bJ+CHASE.mute;chase.miss[_ch]=0;msg(T("Inseguimento: sui {0} non sento niente, la salto per 10 minuti.",bandName(_ch)))}}
@@ -4426,7 +4427,7 @@ function chaseTick(_ci){
   const _cw=Math.round((_cj-chase.t0)/1000),_cx=bandOf(_ck.hz);
   $("scanInfo").textContent=T("{0} su {1} kHz · {2} s · {3}",_ck.call,_ck.khz.toFixed(1),_cw,chase.got?T("decodificato"):chase.weak&&!chase.interest?T("segnale debole, sommo le ripetizioni…"):chase.heard?T("decodifico…"):T("attendo segnali"))+(_cx&&CLF.chase!=="all"?"":" · "+(_cx?bandName(_cx[0]):""))+(chase.done.size?" · ✓ "+chase.done.size:"");
   const _cy=SK.list.some(_cz=>_cz.msg&&_cz.msg.live&&Math.abs(_cz.f-_cl)<150&&_cm(_cz.d));
-  const _cA=!chase.got&&!_cq.length&&!_cy&&_cj-chase.t0>CHASE.empty&&!(STK.at>chase.t0&&STK.bursts>0);
+  const _cA=!chase.got&&!_cq.length&&!_cy&&_cj-chase.t0>(chase.arm||CHASE.empty)+(chase.wait>CHASE.firstWait?CHASE.bandWait:0)&&!(STK.at>chase.t0&&STK.bursts>0);
   const _cB=_cA||(!chase.heard&&_cj-chase.t0>chase.wait)||(!chase.got&&!chase.interest&&_cj-chase.t0>(chase.weak?60000:CHASE.boring)&&!_cy)||(chase.heard&&_cj-chase.lastAct>CHASE.quiet)||_cj-chase.t0>CHASE.maxDwell||(chase.got&&_cj-chase.gotAt>CHASE.afterGot&&!_cy);
   if(_cB)chaseLeave(_cj);
 }

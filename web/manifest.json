@@ -1,9 +1,9 @@
 {
-  "web": "1.12.3",
+  "web": "1.12.4",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.3.html",
-  "size": 599317,
-  "sha256": "f96e1c7886e9a6ef319386f811011bafe3da07381016493268ab898ca498ab1a",
-  "date": "2026-11-11 12:15 UTC",
-  "notes": "L'inseguimento non si ferma più da solo se la radio tarda a cambiare frequenza; ritagli audio; inseguimento più svelto"
+  "file": "cwiu1mvi-1.12.4.html",
+  "size": 599484,
+  "sha256": "12f2d4496ea114e069efbd7f69b45a55734ca3d0b6ea19254783dd0e316f9175",
+  "date": "2026-11-11 13:00 UTC",
+  "notes": "Inseguimento: prova a confronto sui tempi di attesa"
 }
