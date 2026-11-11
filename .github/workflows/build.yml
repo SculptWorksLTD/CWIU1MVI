@@ -14,6 +14,8 @@ on:
       - 'app/main.js'
       - 'app/preload.js'
       - 'app/updater.js'
+      - 'app/cluster.js'
+      - 'app/hamqth.js'
       - 'package.json'
       - 'build/**'
       - '.github/workflows/**'
