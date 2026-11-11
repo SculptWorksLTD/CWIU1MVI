@@ -1,9 +1,9 @@
 {
-  "web": "1.12.10",
+  "web": "1.12.11",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.10.html",
-  "size": 607721,
-  "sha256": "f32ae1e83ed655c815a244ba2a22c18e95ed2d604bdea12b168a8cfefbb0f558",
-  "date": "2026-11-11 19:20 UTC",
-  "notes": "Tolto il tasto Ritagli"
+  "file": "cwiu1mvi-1.12.11.html",
+  "size": 607745,
+  "sha256": "011f755a39d95e07bde4aa8eedb40d0eb4ebd2e174148e2653e3c4d2378c0ffe",
+  "date": "2026-11-11 19:37 UTC",
+  "notes": "Il registro degli eventi ora si scrive davvero"
 }

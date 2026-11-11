@@ -2548,7 +2548,7 @@ const LOGAPI=window.cwiuLog||null;
 const pad2=_ds=>String(_ds).padStart(2,"0");
 const dUTC=_dt=>{const _du=new Date(_dt);return _du.getUTCFullYear()+"-"+pad2(_du.getUTCMonth()+1)+"-"+pad2(_du.getUTCDate())};
 const hUTC=_dv=>{const _dw=new Date(_dv);return pad2(_dw.getUTCHours())+":"+pad2(_dw.getUTCMinutes())+":"+pad2(_dw.getUTCSeconds())};
-function evLog(_dx,_dy){try{if(!LOGAPI)return;const _dz=Date.now();LOGAPI.append("eventi-"+dUTC(_dz)+".csv","utc;evento;dettaglio",[hUTC(_dz),_dx,'"'+String(_dy==null?"":_dy).replace(/"/g,"'")+'"'])}catch(_dA){}}
+function evLog(_dx,_dy){try{if(!LOGAPI)return;const _dz=Date.now();LOGAPI.append("eventi-"+dUTC(_dz)+".csv","utc;evento;dettaglio",[hUTC(_dz),_dx,'"'+String(_dy==null?"":_dy).replace(/"/g,"'")+'"'].join(";")).catch(()=>{})}catch(_dA){}}
 setTimeout(()=>{try{evLog("avvio","pagina "+WEB_VERSION)}catch(_dB){}},0);
 document.addEventListener("visibilitychange",()=>evLog(document.hidden?"finestra nascosta":"finestra visibile",""));
 const csv=_dC=>{_dC=_dC==null?"":String(_dC);return /[",;\n]/.test(_dC)?'"'+_dC.replace(/"/g,'""')+'"':_dC};
@@ -3935,7 +3935,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.10";
+const WEB_VERSION="1.12.11";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
