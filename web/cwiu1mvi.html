@@ -2017,10 +2017,10 @@ function riggerPort(_ar){let _as=null;const _at={rigger:_ar,readable:null,writab
   async setSignals(){},getInfo(){return {}},push(_ay){if(_as)try{_as.enqueue(_ay)}catch(_az){}}};
   RIGGER_PORT=_at;return _at}
 if(RIGGER)RIGGER.onData(_aA=>{if(RIGGER_PORT)RIGGER_PORT.push(new Uint8Array(_aA))});
-let RIGGER_BACK=null;
+let RIGGER_BACK=null,RIGGER_CHASE=false;
 if(RIGGER&&RIGGER.onClosed)RIGGER.onClosed(async _aB=>{
   if(!rig.port||rig.port.rigger!==_aB)return;
-  const _aC={name:_aB,mic:mode==="mic",chase:!!(typeof chase!=="undefined"&&chase.on),next:0};
+  const _aC={name:_aB,mic:mode==="mic",chase:!!(typeof chase!=="undefined"&&chase.on)||RIGGER_CHASE,next:0};RIGGER_CHASE=false;
   evLog("The Rigger ha chiuso la porta",_aB);
   await catDisconnect(T("The Rigger ha chiuso la porta {0}: la ricollego appena torna.",_aB));
   RIGGER_BACK=_aC});
@@ -2035,7 +2035,7 @@ if(RIGGER)setInterval(async()=>{const _aD=RIGGER_BACK;if(!_aD||rig.port||Date.no
   await catConnect();
   if(!rig.port||RIGGER_BACK!==_aD)return;
   RIGGER_BACK=null;msg(T("The Rigger è tornato: radio ricollegata su {0}.",_aD.name));
-  if(_aD.chase)setTimeout(()=>{try{if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aK){}},3000)},3000);
+  if(_aD.chase){RIGGER_CHASE=true;setTimeout(()=>{if(!RIGGER_CHASE)return;RIGGER_CHASE=false;try{if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aK){}},3000)}},3000);
 function catViaRigger(){const _aL=$("catVia")?$("catVia").value:"usb";return RIGGER&&_aL&&_aL!=="usb"?_aL.replace(/^tr:/,""):""}
 async function catViaFill(){const _aM=$("catVia");if(!_aM)return;let _aN=[];try{if(RIGGER)_aN=await RIGGER.list()}catch(_aO){}
   const _aP=(prefs().catVia)||"usb";if(_aN.join()===_aM.dataset.names&&_aM.options.length)return;_aM.dataset.names=_aN.join();_aM.textContent="";
@@ -2043,7 +2043,7 @@ async function catViaFill(){const _aM=$("catVia");if(!_aM)return;let _aN=[];try{
   for(const _aR of _aN){const _aS=document.createElement("option");_aS.value="tr:"+_aR;_aS.textContent="The Rigger · "+_aR;_aM.appendChild(_aS)}
   _aM.value=(_aP!=="usb"&&_aN.includes(_aP.replace(/^tr:/,"")))?_aP:"usb";$("catViaRow").hidden=!_aN.length}
 try{$("catVia").onchange=()=>{const _aT=prefs();_aT.catVia=$("catVia").value;savePrefs(_aT)};catViaFill();setInterval(()=>{if(!rig.port)catViaFill()},4000)}catch(_aU){}
-$("catBtn").onclick=()=>{RIGGER_BACK=null;catConnect()};
+$("catBtn").onclick=()=>{RIGGER_BACK=null;RIGGER_CHASE=false;catConnect()};
 async function catConnect(_aV){
   if(rig.port){await catDisconnect();return}
   if(!("serial" in navigator)){msg(T("Il collegamento CAT non è disponibile in questa versione. Puoi comunque usare l'audio USB come ingresso."),true);return}
@@ -3954,7 +3954,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.12";
+const WEB_VERSION="1.12.13";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4398,7 +4398,7 @@ if(CLAPI){
 $("clSrv").onchange=()=>{$("clHost").hidden=$("clSrv").value!=="custom";const _aS=clCfg();_aS.srv=$("clSrv").value;clSave(_aS)};
 $("clBtn").onclick=clConnect;
 var chase={on:false,phase:"",target:null,t0:0,lastAct:0,heard:false,got:false,interest:false,expect:0,visited:new Map(),done:new Set(),n:0,tick:0,pickAt:0,miss:{},mute:{},band:null};
-const CHASE={empty:18000,afterGot:20000,firstWait:10000,bandWait:3500,boring:30000,quiet:12000,maxDwell:90000,coolDone:20*60000,coolMiss:8*60000,respot:90000,maxAge:10*60000,muteAfter:3,mute:10*60000};
+const CHASE={empty:30000,afterGot:20000,firstWait:10000,bandWait:3500,boring:30000,quiet:12000,maxDwell:90000,coolDone:20*60000,coolMiss:8*60000,respot:90000,maxAge:10*60000,muteAfter:3,mute:10*60000};
 function chaseStart(){
   if(chase.on){chaseStop(T("Inseguimento fermato."),"tasto o menu");return}
   if(!CLAPI){msg(T("Il cluster funziona nell'app per Mac e Windows."),true);return}
@@ -4444,7 +4444,7 @@ function chasePick(){
   _bw.sort((_bF,_bG)=>_bB(_bG)-_bB(_bF));const _bH=_bw[0];
   const _bI=!_bA||bandOf(_bH.hz)!==_bA;
   chase.target=_bH;chase.visited.set(_bH.call,_bu);chase.n++;
-  const _bJ=Math.round(_bH.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.arm=Math.random()<0.5?CHASE.empty:CHASE.boring;
+  const _bJ=Math.round(_bH.hz/10)*10;chase.prevF=rig.freq||0;chase.tries=0;chase.arm=CHASE.empty;
   chase.expect=_bJ;chase.setAt=_bu;chase.off=0;chase.resent=false;cat.setFreq(_bJ);WF.avg=null;
   chase.phase="dwell";chase.t0=_bu;chase.lastAct=_bu;chase.heard=false;chase.got=false;chase.interest=false;chase.weak=false;chase.wait=CHASE.firstWait+(_bI?CHASE.bandWait:0);
 }
