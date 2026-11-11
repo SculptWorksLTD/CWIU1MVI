@@ -1,0 +1,227 @@
+name: Build CWIU1MVI
+
+# Costruisce CWIU1MVI per Windows, Mac e Linux.
+# A ogni build riuscita pubblica una Release (vX.Y.Z-buildN) con l'app completa.
+
+# L'app completa si ricostruisce solo quando cambia il "guscio" (main, preload, aggiornamento,
+# configurazione, icone). Decoder e interfaccia (app/cwiu1mvi.html) arrivano invece come aggiornamento
+# leggero dalla cartella web/ di questa repo.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'app/main.js'
+      - 'app/preload.js'
+      - 'app/updater.js'
+      - 'package.json'
+      - 'build/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\electron\Cache
+          key: electron-win-${{ hashFiles('package.json') }}
+          restore-keys: electron-win-
+      - name: Installa i pacchetti
+        shell: bash
+        run: |
+          for t in 1 2 3 4 5 6; do
+            if npm install --no-audit --no-fund > install.log 2>&1; then cat install.log; exit 0; fi
+            echo "Tentativo $t fallito"; tail -n 40 install.log; sleep 30
+          done
+          grep -iE "npm (error|ERR)|error" install.log | tail -n 25 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+          echo "::error title=npm install::$(cat tail.txt)"
+          exit 1
+      - name: Numero di build
+        shell: bash
+        run: |
+          echo "{\"build\":${GITHUB_RUN_NUMBER}}" > app/build.json
+          cat app/build.json
+      - name: Build Windows
+        shell: bash
+        run: |
+          set -o pipefail
+          ok=0
+          for t in 1 2 3; do
+            if npm run dist:win 2>&1 | tee build.log; then ok=1; break; fi
+            echo "Tentativo $t fallito, riprovo"; sleep 20
+          done
+          if [ $ok = 0 ]; then
+            tail -n 25 build.log | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+            echo "::error title=electron-builder Windows::$(cat tail.txt)"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CWIU1MVI-Windows
+          path: |
+            dist/*-Windows.zip
+            dist/*-Setup.exe
+          if-no-files-found: error
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/electron
+          key: electron-mac-${{ hashFiles('package.json') }}
+          restore-keys: electron-mac-
+      - name: Installa i pacchetti
+        shell: bash
+        run: |
+          for t in 1 2 3 4 5 6; do
+            if npm install --no-audit --no-fund > install.log 2>&1; then cat install.log; exit 0; fi
+            echo "Tentativo $t fallito"; tail -n 40 install.log; sleep 30
+          done
+          grep -iE "npm (error|ERR)|error" install.log | tail -n 25 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+          echo "::error title=npm install::$(cat tail.txt)"
+          exit 1
+      - name: Numero di build
+        run: |
+          echo "{\"build\":${GITHUB_RUN_NUMBER}}" > app/build.json
+          cat app/build.json
+      - name: Build Mac
+        run: |
+          set -o pipefail
+          ok=0
+          for t in 1 2 3; do
+            if npm run dist:mac 2>&1 | tee build.log; then ok=1; break; fi
+            echo "Tentativo $t fallito, riprovo"; sleep 20
+          done
+          if [ $ok = 0 ]; then
+            tail -n 25 build.log | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+            echo "::error title=electron-builder Mac::$(cat tail.txt)"
+            exit 1
+          fi
+      - name: Firma ad-hoc e archivio zip
+        run: |
+          APP="$(ls -d dist/mac*/*.app | head -n 1)"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep "$APP"
+          VERSION=$(node -p "require('./package.json').version")
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/CWIU1MVI-${VERSION}-Mac.zip"
+      - name: Installer .pkg
+        run: |
+          set -e
+          VERSION=$(node -p "require('./package.json').version")
+          ROOT="$(dirname "$(ls -d dist/mac*/*.app | head -n 1)")"
+          mkdir -p pkgtmp/scripts && cp build/pkg/postinstall pkgtmp/scripts/ && chmod +x pkgtmp/scripts/postinstall
+          pkgbuild --analyze --root "$ROOT" pkgtmp/comp.plist
+          /usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" -c "Set :0:BundleOverwriteAction upgrade" pkgtmp/comp.plist
+          pkgbuild --root "$ROOT" --component-plist pkgtmp/comp.plist --install-location /Applications \
+            --scripts pkgtmp/scripts --identifier com.iu1mvi.cwiu1mvi --version "$VERSION" pkgtmp/CWIU1MVI-core.pkg
+          sed "s/__VERSION__/${VERSION}/" build/pkg/distribution.xml > pkgtmp/distribution.xml
+          productbuild --distribution pkgtmp/distribution.xml --resources build/pkg/resources --package-path pkgtmp "dist/CWIU1MVI-${VERSION}-Mac.pkg"
+          pkgutil --check-signature "dist/CWIU1MVI-${VERSION}-Mac.pkg" || true
+          ls -la dist/*.pkg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CWIU1MVI-Mac
+          path: |
+            dist/*-Mac.zip
+            dist/*-Mac.pkg
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: electron-linux-${{ hashFiles('package.json') }}
+          restore-keys: electron-linux-
+      - name: Installa i pacchetti
+        run: |
+          for t in 1 2 3 4 5 6; do
+            if npm install --no-audit --no-fund > install.log 2>&1; then cat install.log; exit 0; fi
+            echo "Tentativo $t fallito"; tail -n 40 install.log; sleep 30
+          done
+          grep -iE "npm (error|ERR)|error" install.log | tail -n 25 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+          echo "::error title=npm install::$(cat tail.txt)"
+          exit 1
+      - name: Numero di build
+        run: |
+          echo "{\"build\":${GITHUB_RUN_NUMBER}}" > app/build.json
+          cat app/build.json
+      - name: Build Linux
+        run: |
+          set -o pipefail
+          ok=0
+          for t in 1 2 3; do
+            if npm run dist:linux 2>&1 | tee build.log; then ok=1; break; fi
+            echo "Tentativo $t fallito, riprovo"; sleep 20
+          done
+          if [ $ok = 0 ]; then
+            tail -n 25 build.log | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}' > tail.txt
+            echo "::error title=electron-builder Linux::$(cat tail.txt)"
+            exit 1
+          fi
+          ls -la dist
+      - name: Prova di avvio
+        run: |
+          # l'app deve partire e caricare la pagina (schermo virtuale, senza radio)
+          sudo apt-get install -y xvfb > /dev/null 2>&1 || true
+          APP="$(ls -d dist/linux-unpacked | head -n 1)"
+          timeout 25 xvfb-run -a "$APP/cwiu1mvi" --no-sandbox --disable-gpu > run.log 2>&1 || code=$?
+          tail -n 15 run.log || true
+          if [ "${code:-0}" != "124" ]; then echo "::warning title=Avvio Linux::l'app si è chiusa da sola (codice ${code:-0}): $(tail -n 3 run.log | tr '\n' ' ')"; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CWIU1MVI-Linux
+          path: |
+            dist/*-Linux.AppImage
+            dist/*-Linux.deb
+          if-no-files-found: error
+
+  release:
+    # Come nel progetto AutoSculpt: a ogni build riuscita pubblica una Release,
+    # da cui i file si scaricano senza dover accedere a GitHub.
+    needs: [windows, mac, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          TAG="${GITHUB_REF_NAME}"; [ "$GITHUB_REF_TYPE" = "tag" ] || TAG="v${V}-build${GITHUB_RUN_NUMBER}"
+          cp build/release-notes.md notes.md
+          gh release delete "$TAG" -y 2>/dev/null || true
+          gh release create "$TAG" out/* --title "CWIU1MVI $V (build ${GITHUB_RUN_NUMBER})" --notes-file notes.md --target "$GITHUB_SHA" --latest
+      - name: Toglie le release vecchie
+        # resta solo l'ultima: il programma installato scarica sempre quella
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          TAG="${GITHUB_REF_NAME}"; [ "$GITHUB_REF_TYPE" = "tag" ] || TAG="v${V}-build${GITHUB_RUN_NUMBER}"
+          gh release list --limit 200 --json tagName -q '.[].tagName' | grep -vx "$TAG" | while read -r t; do
+            gh release delete "$t" -y --cleanup-tag || echo "non riesco a togliere $t"
+          done

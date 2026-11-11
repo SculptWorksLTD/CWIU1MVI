@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+  <title>CWIU1MVI</title>
+  <welcome file="welcome.html" mime-type="text/html"/>
+  <license file="license.txt"/>
+  <conclusion file="conclusion.html" mime-type="text/html"/>
+  <options customize="never" require-scripts="false" hostArchitectures="arm64"/>
+  <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+  <choices-outline>
+    <line choice="default"><line choice="app"/></line>
+  </choices-outline>
+  <choice id="default"/>
+  <choice id="app" visible="false"><pkg-ref id="com.iu1mvi.cwiu1mvi"/></choice>
+  <pkg-ref id="com.iu1mvi.cwiu1mvi" version="__VERSION__" onConclusion="none">CWIU1MVI-core.pkg</pkg-ref>
+</installer-gui-script>
