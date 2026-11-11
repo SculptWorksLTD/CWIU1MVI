@@ -1,9 +1,9 @@
 {
-  "web": "1.12.5",
+  "web": "1.12.6",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.5.html",
-  "size": 606617,
-  "sha256": "89aee1ff8749ad3896d063d99f86302e180aef377ab529a2537d9610b7f5c113",
-  "date": "2026-11-11 13:13 UTC",
-  "notes": "Collegamento alla radio attraverso The Rigger (Mac e Linux, con app 1.2.7); messaggio più chiaro se la radio è occupata"
+  "file": "cwiu1mvi-1.12.6.html",
+  "size": 606688,
+  "sha256": "8279a9b639c2f8fdd3d2df33feae52395e2566f38f67c44f9329162f888ec62a",
+  "date": "2026-11-11 13:45 UTC",
+  "notes": "Con The Rigger la radio viene riconosciuta giusta (prima compariva IC-905)"
 }

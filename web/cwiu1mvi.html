@@ -1919,7 +1919,8 @@ function onFrame(_D){
   if(_D.from===0xE0)return;
   rig.got=true;
   try{k7Frame(_D)}catch(_E){}
-  if(_D.cmd===0x19&&_D.data[0]===0x00){rig.addr=_D.data[1]??_D.from;showRigName();return}
+  if(_D.cmd===0x19&&_D.data[0]===0x00){rig.addr=_D.data[1]??_D.from;rig.idok=true;showRigName();return}
+  if(rig.idok&&_D.from!==rig.addr)return;
   if(rig.addr!==_D.from){rig.addr=_D.from;showRigName()}
   const _F=_D.data;
   if((_D.cmd===0x00||_D.cmd===0x03)&&_F.length>=4)setFreqRead(civFreq(_F));
@@ -1987,7 +1988,7 @@ async function openAt(_ad,_ae){
   let _af=false;for(let _ag=0;_ag<6&&!_af;_ag++){try{await rig.port.open({baudRate:_ad,stopBits:_ae==="civ"?1:2});_af=true}catch(_ah){await wait(300)}}
   if(!_af)return "busy";
   try{await rig.port.setSignals({dataTerminalReady:false,requestToSend:false})}catch(_ai){}
-  rig.writer=rig.port.writable.getWriter();rig.buf=[];rig.abuf="";rig.got=false;rig.probe=_ae;rig.proto=_ae==="civ"?"civ":null;rig.loop=readLoop();
+  rig.writer=rig.port.writable.getWriter();rig.buf=[];rig.abuf="";rig.got=false;rig.probe=_ae;rig.idok=false;rig.proto=_ae==="civ"?"civ":null;rig.loop=readLoop();
   if(_ae==="civ"){civSend([0x19,0x00],0x00);for(const _aj of Object.keys(ICOM))civSend([0x03],+_aj)}
   else{aSend(";");await wait(60);aSend("ID;")}
   for(let _ak=0;_ak<12&&!rig.got;_ak++)await wait(100);
@@ -3929,7 +3930,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.5";
+const WEB_VERSION="1.12.6";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
