@@ -11,5 +11,5 @@ Chi ha già CWIU1MVI su Mac o Windows non deve fare niente: si aggiorna da solo 
 - Mac: dopo un aggiornamento non compare più la richiesta del portachiavi e il CAT si ricollega subito. Chi usa HamQTH deve reinserire una volta utente e password nelle Preferenze.
 
 **1.2.5**
-- Gli aggiornamenti arrivano dalla nuova repo CWIU1MVIRelease.
+- Gli aggiornamenti arrivano dalla nuova repo CWIU1MVI.
 - Linux: pacchetti AppImage e .deb.

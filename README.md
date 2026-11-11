@@ -11,10 +11,10 @@ Decoder CW per Mac, Windows e Linux, sviluppato da **IU1MVI**. Uso libero e grat
 - **Propagazione**: indici solari e bande aperte in tempo reale.
 - Pannelli personalizzabili, 7 lingue, aggiornamenti automatici.
 
-**Installazione:** scarica `Mac.pkg`, `Setup.exe` o il pacchetto Linux (`.deb` / `.AppImage`) da [Releases](https://github.com/SculptWorksLTD/CWIU1MVIRelease/releases/latest). La guida è nel menu Aiuto.
+**Installazione:** scarica `Mac.pkg`, `Setup.exe` o il pacchetto Linux (`.deb` / `.AppImage`) da [Releases](https://github.com/SculptWorksLTD/CWIU1MVI/releases/latest). La guida è nel menu Aiuto.
 
 ---
 
-**English.** CW decoder for Mac, Windows and Linux by IU1MVI, free for all hams: decodes every CW station on the band from the radio's USB audio, CAT control, cluster spots with automatic chasing, QSO macros with ADIF log and HamQTH lookup, live propagation. Download from [Releases](https://github.com/SculptWorksLTD/CWIU1MVIRelease/releases/latest).
+**English.** CW decoder for Mac, Windows and Linux by IU1MVI, free for all hams: decodes every CW station on the band from the radio's USB audio, CAT control, cluster spots with automatic chasing, QSO macros with ADIF log and HamQTH lookup, live propagation. Download from [Releases](https://github.com/SculptWorksLTD/CWIU1MVI/releases/latest).
 
 © IU1MVI. Tutti i diritti riservati: uso libero del programma per gli OM, codice non copiabile né ridistribuibile (vedi LICENSE). All rights reserved.
