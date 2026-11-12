@@ -8,77 +8,99 @@ const okName = (_a) => typeof _a === 'string' && /^[a-z0-9-]{1,60}\.(csv|adi)$/.
 const bom = (_b) => (/\.adi$/.test(_b) ? '' : '\ufeff');
 ipcMain.handle('log-dir', () => logDir());
 const appendQ = new Map();
-ipcMain.handle('log-append', async (_c, { file:_d, header:_e, line:_f }) => {
-  if (!okName(_d) || typeof _f !== 'string') return false;
-  const _g = logDir(), _h = path.join(_g, _d);
-  const _i = async () => {
-    await fs.promises.mkdir(_g, { recursive: true });
-    let _j = true; try { await fs.promises.access(_h); } catch { _j = false; }
-    await fs.promises.appendFile(_h, (_j ? '' : bom(_d) + (_e || '') + '\n') + _f + '\n', 'utf8');
+function logAppend(_c, _d, _e) {
+  const _f = logDir(), _g = path.join(_f, _c);
+  const _h = async () => {
+    await fs.promises.mkdir(_f, { recursive: true });
+    let _i = true; try { await fs.promises.access(_g); } catch { _i = false; }
+    await fs.promises.appendFile(_g, (_i ? '' : bom(_c) + (_d || '') + '\n') + _e + '\n', 'utf8');
     return true;
   };
-  const _k = (appendQ.get(_h) || Promise.resolve()).then(_i, _i);
-  appendQ.set(_h, _k.catch(() => {}));
-  return _k;
+  const _j = (appendQ.get(_g) || Promise.resolve()).then(_h, _h);
+  appendQ.set(_g, _j.catch(() => {}));
+  return _j;
+}
+ipcMain.handle('log-append', async (_k, { file:_l, header:_m, line:_n }) => {
+  if (!okName(_l) || typeof _n !== 'string') return false;
+  return logAppend(_l, _m, _n);
 });
-ipcMain.handle('log-write', async (_l, { file:_m, text:_n }) => {
-  if (!okName(_m) || typeof _n !== 'string') return false;
-  const _o = logDir();
-  await fs.promises.mkdir(_o, { recursive: true });
-  await fs.promises.writeFile(path.join(_o, _m), bom(_m) + _n, 'utf8');
+let mainDoing = '';
+function mainLog(_o, _p) {
+  const _q = new Date(), _r = '"' + String(_p == null ? '' : _p).replace(/"/g, "'") + '"';
+  logAppend('eventi-' + _q.toISOString().slice(0, 10) + '.csv', 'utc;evento;dettaglio', [_q.toISOString().slice(11, 19), 'app: ' + _o, _r].join(';')).catch(() => {});
+}
+function mainStep(_s, _t) {   // segna cosa sta facendo il processo principale durante un'operazione che può durare
+  const _u = mainDoing; mainDoing = _s;
+  const _v = () => { mainDoing = _u; };
+  try { const _w = _t(); if (_w && typeof _w.then === 'function') return _w.finally(_v); _v(); return _w; } catch (_x) { _v(); throw _x; }
+}
+{
+  let _y = Date.now(), _z = Date.now();
+  setInterval(() => {
+    const _A = Date.now(), _B = _A - _y - 1000;
+    if (_B > 3000) mainLog('bloccata', Math.round(_B / 1000) + ' s' + (mainDoing ? ' durante: ' + mainDoing : ''));
+    if (_A - _z >= 5 * 60000) { _z = _A; mainLog('viva', app.getVersion() + (mainDoing ? ' · ' + mainDoing : '')); }
+    _y = _A;
+  }, 1000);
+}
+ipcMain.handle('log-write', async (_C, { file:_D, text:_E }) => {
+  if (!okName(_D) || typeof _E !== 'string') return false;
+  const _F = logDir();
+  await fs.promises.mkdir(_F, { recursive: true });
+  await fs.promises.writeFile(path.join(_F, _D), bom(_D) + _E, 'utf8');
   return true;
 });
 let rec = null;
-const wavHead = (_p, _q) => {
-  const _r = Buffer.alloc(44);
-  _r.write('RIFF', 0); _r.writeUInt32LE(36 + _q, 4); _r.write('WAVE', 8); _r.write('fmt ', 12);
-  _r.writeUInt32LE(16, 16); _r.writeUInt16LE(1, 20); _r.writeUInt16LE(1, 22); _r.writeUInt32LE(_p, 24);
-  _r.writeUInt32LE(_p * 2, 28); _r.writeUInt16LE(2, 32); _r.writeUInt16LE(16, 34); _r.write('data', 36); _r.writeUInt32LE(_q, 40);
-  return _r;
+const wavHead = (_G, _H) => {
+  const _I = Buffer.alloc(44);
+  _I.write('RIFF', 0); _I.writeUInt32LE(36 + _H, 4); _I.write('WAVE', 8); _I.write('fmt ', 12);
+  _I.writeUInt32LE(16, 16); _I.writeUInt16LE(1, 20); _I.writeUInt16LE(1, 22); _I.writeUInt32LE(_G, 24);
+  _I.writeUInt32LE(_G * 2, 28); _I.writeUInt16LE(2, 32); _I.writeUInt16LE(16, 34); _I.write('data', 36); _I.writeUInt32LE(_H, 40);
+  return _I;
 };
 async function recFinish() {
   if (!rec) return false;
-  const _s = rec; rec = null;
-  try { await _s.fh.write(wavHead(_s.rate, _s.bytes), 0, 44, 0); await _s.fh.close(); } catch { return false; }
+  const _J = rec; rec = null;
+  try { await _J.fh.write(wavHead(_J.rate, _J.bytes), 0, 44, 0); await _J.fh.close(); } catch { return false; }
   return true;
 }
-ipcMain.handle('rec-open', async (_t, { file:_u, rate:_v }) => {
-  if (typeof _u !== 'string' || !/^[a-z0-9-]{1,60}\.wav$/.test(_u)) return false;
-  _v = Math.round(+_v); if (!(_v >= 4000 && _v <= 96000)) return false;
+ipcMain.handle('rec-open', async (_K, { file:_L, rate:_M }) => {
+  if (typeof _L !== 'string' || !/^[a-z0-9-]{1,60}\.wav$/.test(_L)) return false;
+  _M = Math.round(+_M); if (!(_M >= 4000 && _M <= 96000)) return false;
   await recFinish();
-  const _w = logDir(); await fs.promises.mkdir(_w, { recursive: true });
-  const _x = await fs.promises.open(path.join(_w, _u), 'w');
-  await _x.write(wavHead(_v, 0), 0, 44, 0);
-  rec = { fh:_x, rate:_v, bytes: 0, pos: 44 };
+  const _N = logDir(); await fs.promises.mkdir(_N, { recursive: true });
+  const _O = await fs.promises.open(path.join(_N, _L), 'w');
+  await _O.write(wavHead(_M, 0), 0, 44, 0);
+  rec = { fh:_O, rate:_M, bytes: 0, pos: 44 };
   return true;
 });
-ipcMain.handle('rec-append', async (_y, _z) => {
-  if (!rec || !(_z instanceof Uint8Array)) return false;
-  const _A = Buffer.from(_z.buffer, _z.byteOffset, _z.byteLength);
-  await rec.fh.write(_A, 0, _A.length, rec.pos); rec.pos += _A.length; rec.bytes += _A.length;
+ipcMain.handle('rec-append', async (_P, _Q) => {
+  if (!rec || !(_Q instanceof Uint8Array)) return false;
+  const _R = Buffer.from(_Q.buffer, _Q.byteOffset, _Q.byteLength);
+  await rec.fh.write(_R, 0, _R.length, rec.pos); rec.pos += _R.length; rec.bytes += _R.length;
   return true;
 });
 ipcMain.handle('rec-close', () => recFinish());
 const { ClusterLink } = require('./cluster');
-const toPage = (_B, _C) => { if (win && !win.isDestroyed()) win.webContents.send(_B, _C); };
-const cluster = new ClusterLink((_D) => toPage('cl-lines', _D), (_E) => { ui.cluster = _E.state; toPage('cl-state', _E); });
-ipcMain.handle('cl-connect', (_F, _G) => {
-  if (!_G || typeof _G.host !== 'string' || !/^[a-z0-9.-]{3,80}$/i.test(_G.host)) return false;
-  const _H = Math.round(+_G.port); if (!(_H > 0 && _H < 65536)) return false;
-  const _I = String(_G.call || '').toUpperCase(); if (!/^[A-Z0-9/]{3,15}$/.test(_I)) return false;
-  cluster.connect({ host: _G.host, port:_H, call:_I }); return true;
+const toPage = (_S, _T) => { if (win && !win.isDestroyed()) win.webContents.send(_S, _T); };
+const cluster = new ClusterLink((_U) => toPage('cl-lines', _U), (_V) => { ui.cluster = _V.state; toPage('cl-state', _V); });
+ipcMain.handle('cl-connect', (_W, _X) => {
+  if (!_X || typeof _X.host !== 'string' || !/^[a-z0-9.-]{3,80}$/i.test(_X.host)) return false;
+  const _Y = Math.round(+_X.port); if (!(_Y > 0 && _Y < 65536)) return false;
+  const _Z = String(_X.call || '').toUpperCase(); if (!/^[A-Z0-9/]{3,15}$/.test(_Z)) return false;
+  cluster.connect({ host: _X.host, port:_Y, call:_Z }); return true;
 });
 ipcMain.handle('cl-disconnect', () => { cluster.disconnect(); return true; });
-ipcMain.handle('cl-send', (_J, _K) => { if (typeof _K === 'string' && _K.length < 120) cluster.write(_K); return true; });
+ipcMain.handle('cl-send', (_aa, _ab) => { if (typeof _ab === 'string' && _ab.length < 120) cluster.write(_ab); return true; });
 app.on('before-quit', () => cluster.disconnect(true));
 app.on('before-quit', () => riggerClose());
-ipcMain.handle('save-as', async (_L, { name:_M, text:_N }) => {
-  if (typeof _M !== 'string' || typeof _N !== 'string') return false;
-  const _O = BrowserWindow.fromWebContents(_L.sender) || undefined;
-  const _P = await dialog.showSaveDialog(_O, { defaultPath: path.join(app.getPath('documents'), _M.replace(/[^\w.\-]/g, '_')), filters: [{ name: 'ADIF', extensions: ['adi'] }] });
-  if (_P.canceled || !_P.filePath) return false;
-  await fs.promises.writeFile(_P.filePath, _N, 'utf8');
-  return _P.filePath;
+ipcMain.handle('save-as', async (_ac, { name:_ad, text:_ae }) => {
+  if (typeof _ad !== 'string' || typeof _ae !== 'string') return false;
+  const _af = BrowserWindow.fromWebContents(_ac.sender) || undefined;
+  const _ag = await dialog.showSaveDialog(_af, { defaultPath: path.join(app.getPath('documents'), _ad.replace(/[^\w.\-]/g, '_')), filters: [{ name: 'ADIF', extensions: ['adi'] }] });
+  if (_ag.canceled || !_ag.filePath) return false;
+  await fs.promises.writeFile(_ag.filePath, _ae, 'utf8');
+  return _ag.filePath;
 });
 ipcMain.handle('log-open', async () => {
   await fs.promises.mkdir(logDir(), { recursive: true });
@@ -91,131 +113,138 @@ const RIGGER_DIR = '/tmp/TheRigger';
 let rigger = null;
 function riggerClose() {
   if (!rigger) return true;
-  const _Q = rigger; rigger = null;
-  if (_Q.sock) { try { _Q.sock.destroy(); } catch {} return true; }
-  try { _Q.proc.kill(); } catch {}
-  for (const _R of _Q.pending.values()) _R(false);
-  _Q.pending.clear();
+  const _ah = rigger; rigger = null;
+  if (_ah.sock) { try { _ah.sock.destroy(); } catch {} return true; }
+  try { _ah.proc.kill(); } catch {}
+  for (const _ai of _ah.pending.values()) _ai(false);
+  _ah.pending.clear();
   return true;
 }
 const net = require('net');
 function riggerWinEntries() {
   try {
-    const _S = JSON.parse(fs.readFileSync(path.join(process.env.APPDATA || '', 'TheRigger', 'cat.json'), 'utf8'));
-    return (Array.isArray(_S) ? _S : []).filter((_T) => _T && /^[A-Za-z0-9._-]{1,40}$/.test(_T.id) && /^127\.0\.0\.1:\d{2,5}$/.test(_T.addr));
+    const _aj = JSON.parse(fs.readFileSync(path.join(process.env.APPDATA || '', 'TheRigger', 'cat.json'), 'utf8'));
+    return (Array.isArray(_aj) ? _aj : []).filter((_ak) => _ak && /^[A-Za-z0-9._-]{1,40}$/.test(_ak.id) && /^127\.0\.0\.1:\d{2,5}$/.test(_ak.addr));
   } catch { return []; }
 }
-function riggerWinAlive(_U) {
-  return new Promise((_V) => {
-    const [_W, _X] = _U.split(':');
-    const _Y = net.connect({ host:_W, port: +_X });
-    const _Z = (_aa) => { try { _Y.destroy(); } catch {} _V(_aa); };
-    _Y.setTimeout(700, () => _Z(false));
-    _Y.once('connect', () => _Z(true));
-    _Y.once('error', () => _Z(false));
+function riggerWinAlive(_al) {
+  return new Promise((_am) => {
+    const [_an, _ao] = _al.split(':');
+    const _ap = net.connect({ host:_an, port: +_ao });
+    const _aq = (_ar) => { try { _ap.destroy(); } catch {} _am(_ar); };
+    _ap.setTimeout(700, () => _aq(false));
+    _ap.once('connect', () => _aq(true));
+    _ap.once('error', () => _aq(false));
   });
 }
 function riggerAlive() {
-  return new Promise((_ab) => {
-    require('child_process').execFile('ps', ['-axo', 'command='], { timeout: 3000, maxBuffer: 4 << 20 }, (_ac, _ad) => {
-      if (_ac) return _ab(false);
-      _ab(String(_ad).split('\n').some((_ae) => /(^|\/)the ?rigger[^\/]*$/i.test(_ae.trim().split(/\s+-/)[0])));
+  return new Promise((_as) => {
+    require('child_process').execFile('ps', ['-axo', 'command='], { timeout: 3000, maxBuffer: 4 << 20 }, (_at, _au) => {
+      if (_at) return _as(false);
+      _as(String(_au).split('\n').some((_av) => /(^|\/)the ?rigger[^\/]*$/i.test(_av.trim().split(/\s+-/)[0])));
     });
   });
 }
-function riggerLost(_af) {
-  if (rigger !== _af) return;
+function riggerLost(_aw) {
+  if (rigger !== _aw) return;
   riggerClose();
-  if (win && !win.isDestroyed()) win.webContents.send('rigger-closed', _af.name);
+  if (win && !win.isDestroyed()) win.webContents.send('rigger-closed', _aw.name);
 }
 ipcMain.handle('rigger-list', async () => {
   if (process.platform === 'win32') {
-    const _ag = riggerWinEntries();
-    const _ah = await Promise.all(_ag.map((_ai) => riggerWinAlive(_ai.addr)));
-    return _ag.filter((_aj, _ak) => _ah[_ak]).map((_al) => _al.id).sort();
+    const _ax = riggerWinEntries();
+    const _ay = await Promise.all(_ax.map((_az) => riggerWinAlive(_az.addr)));
+    return _ax.filter((_aA, _aB) => _ay[_aB]).map((_aC) => _aC.id).sort();
   }
   if (!(await riggerAlive())) return [];
-  try { return fs.readdirSync(RIGGER_DIR).filter((_am) => /^[A-Za-z0-9._-]{1,40}$/.test(_am)).sort(); } catch { return []; }
+  try { return fs.readdirSync(RIGGER_DIR).filter((_aD) => /^[A-Za-z0-9._-]{1,40}$/.test(_aD)).sort(); } catch { return []; }
 });
-ipcMain.handle('rigger-open', async (_an, _ao) => {
+async function riggerOpen(_aE) {
   riggerClose();
   if (process.platform === 'win32') {
-    const _ap = riggerWinEntries().find((_aq) => _aq.id === _ao);
-    if (!_ap) return false;
-    const [_ar, _as] = _ap.addr.split(':');
-    return await new Promise((_at) => {
-      const _au = net.connect({ host:_ar, port: +_as });
-      const _av = { sock:_au, name:_ao };
-      _au.setNoDelay(true);
-      _au.once('connect', () => { rigger = _av; _at(true); });
-      _au.on('data', (_aw) => { if (rigger === _av && win && !win.isDestroyed()) win.webContents.send('rigger-data', new Uint8Array(_aw)); });
-      _au.on('error', () => { if (rigger !== _av) _at(false); riggerLost(_av); });
-      _au.on('close', () => riggerLost(_av));
+    const _aF = riggerWinEntries().find((_aG) => _aG.id === _aE);
+    if (!_aF) return false;
+    const [_aH, _aI] = _aF.addr.split(':');
+    return await new Promise((_aJ) => {
+      const _aK = net.connect({ host:_aH, port: +_aI });
+      const _aL = { sock:_aK, name:_aE };
+      _aK.setNoDelay(true);
+      _aK.once('connect', () => { rigger = _aL; _aJ(true); });
+      _aK.on('data', (_aM) => { if (rigger === _aL && win && !win.isDestroyed()) win.webContents.send('rigger-data', new Uint8Array(_aM)); });
+      _aK.on('error', () => { if (rigger !== _aL) _aJ(false); riggerLost(_aL); });
+      _aK.on('close', () => riggerLost(_aL));
     });
   }
-  if (typeof _ao !== 'string' || !/^[A-Za-z0-9._-]{1,40}$/.test(_ao)) return false;
+  if (typeof _aE !== 'string' || !/^[A-Za-z0-9._-]{1,40}$/.test(_aE)) return false;
   if (!(await riggerAlive())) return false;
-  let _ax;
-  try { _ax = fs.realpathSync(path.join(RIGGER_DIR, _ao)); } catch { return false; }
-  if (!/^\/dev\/(ttys\d+|pts\/\d+)$/.test(_ax)) return false;
-  let _ay;
-  try { _ay = utilityProcess.fork(path.join(__dirname, 'rigger-io.js'), [], { serviceName: 'CWIU1MVI porta The Rigger' }); } catch { return false; }
-  const _az = { proc:_ay, name:_ao, pending: new Map(), seq: 0 };
-  rigger = _az;
-  return await new Promise((_aA) => {
-    let _aB = false;
-    const _aC = (_aD) => { if (!_aB) { _aB = true; clearTimeout(_aE); _aA(_aD); } };
-    const _aE = setTimeout(() => { if (rigger === _az) riggerClose(); _aC(false); }, 4000);
-    _ay.on('message', (_aF) => {
-      if (!_aF) return;
-      if (_aF.op === 'opened') { if (!_aF.ok && rigger === _az) riggerClose(); _aC(!!_aF.ok && rigger === _az); }
-      else if (_aF.op === 'data') { if (rigger === _az && win && !win.isDestroyed()) win.webContents.send('rigger-data', _aF.b); }
-      else if (_aF.op === 'lost') riggerLost(_az);
-      else if (_aF.op === 'wrote') {
-        const _aG = _az.pending.get(_aF.id);
-        if (_aG) { _az.pending.delete(_aF.id); _aG(!!_aF.ok); }
-        if (!_aF.ok && _aF.code && _aF.code !== 'EAGAIN') riggerLost(_az);
+  let _aN;
+  try { _aN = fs.realpathSync(path.join(RIGGER_DIR, _aE)); } catch { return false; }
+  if (!/^\/dev\/(ttys\d+|pts\/\d+)$/.test(_aN)) return false;
+  let _aO;
+  try { _aO = utilityProcess.fork(path.join(__dirname, 'rigger-io.js'), [], { serviceName: 'CWIU1MVI porta The Rigger' }); } catch { return false; }
+  const _aP = { proc:_aO, name:_aE, pending: new Map(), seq: 0 };
+  rigger = _aP;
+  return await new Promise((_aQ) => {
+    let _aR = false;
+    const _aS = (_aT) => { if (!_aR) { _aR = true; clearTimeout(_aU); _aQ(_aT); } };
+    const _aU = setTimeout(() => { if (rigger === _aP) riggerClose(); _aS(false); }, 4000);
+    _aO.on('message', (_aV) => {
+      if (!_aV) return;
+      if (_aV.op === 'opened') { if (!_aV.ok && rigger === _aP) riggerClose(); _aS(!!_aV.ok && rigger === _aP); }
+      else if (_aV.op === 'data') { if (rigger === _aP && win && !win.isDestroyed()) win.webContents.send('rigger-data', _aV.b); }
+      else if (_aV.op === 'lost') riggerLost(_aP);
+      else if (_aV.op === 'wrote') {
+        const _aW = _aP.pending.get(_aV.id);
+        if (_aW) { _aP.pending.delete(_aV.id); _aW(!!_aV.ok); }
+        if (!_aV.ok && _aV.code && _aV.code !== 'EAGAIN') riggerLost(_aP);
       }
     });
-    _ay.on('exit', () => { _aC(false); riggerLost(_az); });
-    _ay.postMessage({ op: 'open', path: _ax });
+    _aO.on('exit', () => { _aS(false); riggerLost(_aP); });
+    _aO.postMessage({ op: 'open', path: _aN });
   });
-});
-ipcMain.handle('rigger-write', (_aH, _aI) => new Promise((_aJ) => {
-  if (!rigger || !(_aI instanceof Uint8Array)) return _aJ(false);
-  const _aK = rigger;
-  if (_aK.sock) {
-    _aK.sock.write(Buffer.from(_aI.buffer, _aI.byteOffset, _aI.byteLength), (_aL) => { if (_aL) riggerLost(_aK); _aJ(!_aL); });
+}
+ipcMain.handle('rigger-open', (_aX, _aY) => mainStep('apertura porta The Rigger ' + _aY, async () => {
+  const _aZ = await riggerOpen(_aY);
+  mainLog('porta The Rigger', _aY + (_aZ ? ' aperta' : ' non aperta'));
+  return _aZ;
+}));
+ipcMain.handle('rigger-write', (_ba, _bb) => new Promise((_bc) => {
+  if (!rigger || !(_bb instanceof Uint8Array)) return _bc(false);
+  const _bd = rigger;
+  if (_bd.sock) {
+    _bd.sock.write(Buffer.from(_bb.buffer, _bb.byteOffset, _bb.byteLength), (_be) => { if (_be) riggerLost(_bd); _bc(!_be); });
     return;
   }
-  const _aM = ++_aK.seq;
-  _aK.pending.set(_aM, _aJ);
-  setTimeout(() => { if (_aK.pending.has(_aM)) { _aK.pending.delete(_aM); _aJ(false); } }, 3000);
-  try { _aK.proc.postMessage({ op: 'write', id:_aM, b: _aI }); } catch { _aK.pending.delete(_aM); _aJ(false); }
+  const _bf = ++_bd.seq;
+  _bd.pending.set(_bf, _bc);
+  setTimeout(() => { if (_bd.pending.has(_bf)) { _bd.pending.delete(_bf); _bc(false); } }, 3000);
+  try { _bd.proc.postMessage({ op: 'write', id:_bf, b: _bb }); } catch { _bd.pending.delete(_bf); _bc(false); }
 }));
 ipcMain.handle('rigger-close', () => riggerClose());
-ipcMain.handle('hq-set', (_aN, _aO) => { const _aP = String((_aO && _aO.user) || '').toUpperCase().replace(/[^A-Z0-9/]/g, '').slice(0, 15); const _aQ = _aO && typeof _aO.pass === 'string' ? _aO.pass.slice(0, 100) : undefined; hamqth.saveCred(_aP, _aQ); return hamqth.status(); });
+ipcMain.handle('hq-set', (_bg, _bh) => { const _bi = String((_bh && _bh.user) || '').toUpperCase().replace(/[^A-Z0-9/]/g, '').slice(0, 15); const _bj = _bh && typeof _bh.pass === 'string' ? _bh.pass.slice(0, 100) : undefined; hamqth.saveCred(_bi, _bj); return hamqth.status(); });
 ipcMain.handle('hq-status', () => hamqth.status());
 ipcMain.handle('hq-test', () => hamqth.test());
-ipcMain.handle('hq-lookup', async (_aR, _aS) => { try { return await hamqth.lookup(_aS); } catch (_aT) { return { ok: false, error: String(_aT.message || _aT) }; } });
-ipcMain.handle('hq-upload', async (_aU, _aV) => { try { if (typeof _aV !== 'string' || _aV.length > 4000) return { ok: false, error: 'adif' }; return await hamqth.upload(_aV); } catch (_aW) { return { ok: false, error: String(_aW.message || _aW) }; } });
+ipcMain.handle('hq-lookup', async (_bk, _bl) => { try { return await hamqth.lookup(_bl); } catch (_bm) { return { ok: false, error: String(_bm.message || _bm) }; } });
+ipcMain.handle('hq-upload', async (_bn, _bo) => { try { if (typeof _bo !== 'string' || _bo.length > 4000) return { ok: false, error: 'adif' }; return await hamqth.upload(_bo); } catch (_bp) { return { ok: false, error: String(_bp.message || _bp) }; } });
 ipcMain.handle('app-info', () => updater.info());
 ipcMain.handle('upd-check', async () => {
-  try { upd = await updater.check(); return upd; } catch (_aX) { return { available: false, error: String(_aX.message || _aX) }; }
+  try { upd = await mainStep('controllo aggiornamenti', () => updater.check()); return upd; } catch (_bq) { return { available: false, error: String(_bq.message || _bq) }; }
 });
-ipcMain.handle('upd-install', async (_aY) => {
+ipcMain.handle('upd-install', async (_br) => {
   if (!upd || !upd.available) return { ok: false, error: 'no update' };
   try {
-    const _aZ = (_ba) => { if (!_aY.sender.isDestroyed()) _aY.sender.send('upd-progress', _ba); };
+    const _bs = (_bt) => { if (!_br.sender.isDestroyed()) _br.sender.send('upd-progress', _bt); };
     if (upd.kind === 'web') {
-      const _bb = await updater.installWeb(upd, _aZ);
+      mainLog('aggiornamento leggero', upd.version);
+      const _bu = await mainStep('aggiornamento leggero', () => updater.installWeb(upd, _bs));
       upd = null;
-      setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(_bb, { query: { updated: '1' } }); }, 900);
+      setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(_bu, { query: { updated: '1' } }); }, 900);
       return { ok: true, reload: true };
     }
-    await updater.install(upd, _aZ);
+    mainLog('aggiornamento completo', upd.version + (upd.build ? '-' + upd.build : ''));
+    await mainStep('aggiornamento completo', () => updater.install(upd, _bs));
     return { ok: true };
-  } catch (_bc) { return { ok: false, error: String(_bc.message || _bc) }; }
+  } catch (_bv) { return { ok: false, error: String(_bv.message || _bv) }; }
 });
 ipcMain.on('upd-cancel', () => updater.cancel());
 const isMac = process.platform === 'darwin';
@@ -234,12 +263,12 @@ function openWindow() {
   });
   win.loadFile(updater.pagePath());
   win.once('ready-to-show', () => { win.maximize(); win.show(); });
-  win.webContents.setWindowOpenHandler(({ url:_bd }) => {
-    if (/^https?:/i.test(_bd)) shell.openExternal(_bd);
+  win.webContents.setWindowOpenHandler(({ url:_bw }) => {
+    if (/^https?:/i.test(_bw)) shell.openExternal(_bw);
     return { action: 'deny' };
   });
-  win.webContents.on('will-navigate', (_be, _bf) => {
-    if (!_bf.startsWith('file:')) { _be.preventDefault(); shell.openExternal(_bf); }
+  win.webContents.on('will-navigate', (_bx, _by) => {
+    if (!_by.startsWith('file:')) { _bx.preventDefault(); shell.openExternal(_by); }
   });
   win.on('closed', () => { riggerClose(); win = null; });
   win.webContents.on('did-finish-load', () => { buildMenu(); setTimeout(rescueCheck, 15000); });
@@ -247,63 +276,63 @@ function openWindow() {
 let rescued = false;
 async function rescueCheck() {
   if (rescued || !win || win.isDestroyed()) return;
-  let _bg = false;
-  try { _bg = await win.webContents.executeJavaScript('window.__pageOk===true', true); } catch {}
-  if (_bg) return;
+  let _bz = false;
+  try { _bz = await win.webContents.executeJavaScript('window.__pageOk===true', true); } catch {}
+  if (_bz) return;
   rescued = true;
   try { upd = await updater.check(); } catch { return; }
   if (!upd || !upd.available) return;
-  const _bh = await dialog.showMessageBox(win, { type: 'info', buttons: [L('rescueInstall'), L('cancel')], defaultId: 0, cancelId: 1, title: 'CWIU1MVI', message: L('rescueMsg').replace('{0}', upd.version || upd.web || '') });
-  if (_bh.response !== 0) return;
+  const _bA = await dialog.showMessageBox(win, { type: 'info', buttons: [L('rescueInstall'), L('cancel')], defaultId: 0, cancelId: 1, title: 'CWIU1MVI', message: L('rescueMsg').replace('{0}', upd.version || upd.web || '') });
+  if (_bA.response !== 0) return;
   try {
-    if (upd.kind === 'web') { const _bi = await updater.installWeb(upd, () => {}); upd = null; win.loadFile(_bi, { query: { updated: '1' } }); }
+    if (upd.kind === 'web') { const _bB = await updater.installWeb(upd, () => {}); upd = null; win.loadFile(_bB, { query: { updated: '1' } }); }
     else await updater.install(upd, () => {});
-  } catch (_bj) { dialog.showMessageBox(win, { type: 'warning', message: String(_bj.message || _bj) }); }
+  } catch (_bC) { dialog.showMessageBox(win, { type: 'warning', message: String(_bC.message || _bC) }); }
 }
-function score(_bk) {
-  const _bl = `${_bk.displayName || ''} ${_bk.portName || ''}`.toLowerCase();
-  if (/cp210|silicon labs|icom/.test(_bl)) return 2;
-  if (/usb/.test(_bl)) return 1;
+function score(_bD) {
+  const _bE = `${_bD.displayName || ''} ${_bD.portName || ''}`.toLowerCase();
+  if (/cp210|silicon labs|icom/.test(_bE)) return 2;
+  if (/usb/.test(_bE)) return 1;
   return 0;
 }
-function setupPermissions(_bm) {
-  _bm.on('select-serial-port', async (_bn, _bo, _bp, _bq) => {
-    _bn.preventDefault();
-    const _br = BrowserWindow.fromWebContents(_bp) || undefined;
-    if (!_bo || _bo.length === 0) {
-      await dialog.showMessageBox(_br, {
+function setupPermissions(_bF) {
+  _bF.on('select-serial-port', async (_bG, _bH, _bI, _bJ) => {
+    _bG.preventDefault();
+    const _bK = BrowserWindow.fromWebContents(_bI) || undefined;
+    if (!_bH || _bH.length === 0) {
+      await dialog.showMessageBox(_bK, {
         type: 'warning',
         title: L('noPortTitle'),
         message: L('noPortMsg'),
         detail: L('noPortDetail'),
       });
-      _bq('');
+      _bJ('');
       return;
     }
-    let _bs = '';
-    try { _bs = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'last-port.json'), 'utf8')).name || ''; } catch { _bs = ''; }
-    const _bt = [..._bo].sort((_bu, _bv) => ((_bv.portName === _bs) - (_bu.portName === _bs)) || (score(_bv) - score(_bu)));
-    const _bw = _bt.map((_bx) => {
-      const _by = _bx.displayName || _bx.portName || L('serialPort');
-      const _bz = _bx.portName && _bx.portName !== _by ? `${_by} (${_bx.portName})` : _by;
-      return _bx.portName && _bx.portName === _bs ? _bz + ' · ' + L('lastUsed') : _bz;
+    let _bL = '';
+    try { _bL = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'last-port.json'), 'utf8')).name || ''; } catch { _bL = ''; }
+    const _bM = [..._bH].sort((_bN, _bO) => ((_bO.portName === _bL) - (_bN.portName === _bL)) || (score(_bO) - score(_bN)));
+    const _bP = _bM.map((_bQ) => {
+      const _bR = _bQ.displayName || _bQ.portName || L('serialPort');
+      const _bS = _bQ.portName && _bQ.portName !== _bR ? `${_bR} (${_bQ.portName})` : _bR;
+      return _bQ.portName && _bQ.portName === _bL ? _bS + ' · ' + L('lastUsed') : _bS;
     });
-    const { response:_bA } = await dialog.showMessageBox(_br, {
+    const { response:_bT } = await dialog.showMessageBox(_bK, {
       type: 'question',
       title: L('portTitle'),
       message: L('portMsg'),
       detail: L('portDetail'),
-      buttons: [..._bw, L('cancel')],
-      cancelId: _bw.length,
+      buttons: [..._bP, L('cancel')],
+      cancelId: _bP.length,
       defaultId: 0,
       noLink: true,
     });
-    if (_bA < _bt.length) { try { fs.writeFileSync(path.join(app.getPath('userData'), 'last-port.json'), JSON.stringify({ name: _bt[_bA].portName || '' })); } catch {} }
-    _bq(_bA < _bt.length ? _bt[_bA].portId : '');
+    if (_bT < _bM.length) { try { fs.writeFileSync(path.join(app.getPath('userData'), 'last-port.json'), JSON.stringify({ name: _bM[_bT].portName || '' })); } catch {} }
+    _bJ(_bT < _bM.length ? _bM[_bT].portId : '');
   });
-  _bm.setPermissionCheckHandler((_bB, _bC) => ['serial', 'media', 'clipboard-sanitized-write'].includes(_bC));
-  _bm.setPermissionRequestHandler((_bD, _bE, _bF) => _bF(['media', 'clipboard-sanitized-write'].includes(_bE)));
-  _bm.setDevicePermissionHandler((_bG) => _bG.deviceType === 'serial');
+  _bF.setPermissionCheckHandler((_bU, _bV) => ['serial', 'media', 'clipboard-sanitized-write'].includes(_bV));
+  _bF.setPermissionRequestHandler((_bW, _bX, _bY) => _bY(['media', 'clipboard-sanitized-write'].includes(_bX)));
+  _bF.setDevicePermissionHandler((_bZ) => _bZ.deviceType === 'serial');
 }
 const LANGS = [['it', 'Italiano'], ['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['ja', '日本語'], ['ru', 'Русский'], ['ar', 'العربية'], ['zh', '中文（简体）']];
 const MT = {
@@ -464,33 +493,33 @@ function initLang() {
   try { LANG = JSON.parse(fs.readFileSync(langFile(), 'utf8')).lang; } catch { LANG = (app.getLocale() || 'it').slice(0, 2); }
   if (!MT[LANG]) LANG = 'en';
 }
-const L = (_bH) => (MT[LANG] && MT[LANG][_bH]) || MT.it[_bH] || _bH;
-ipcMain.on('set-lang', (_bI, _bJ) => {
-  if (!MT[_bJ] || _bJ === LANG) return;
-  LANG = _bJ; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_bJ })); } catch {}
+const L = (_ca) => (MT[LANG] && MT[LANG][_ca]) || MT.it[_ca] || _ca;
+ipcMain.on('set-lang', (_cb, _cc) => {
+  if (!MT[_cc] || _cc === LANG) return;
+  LANG = _cc; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_cc })); } catch {}
   buildMenu();
 });
 let ui = { listening: false, cat: false, cwOk: false, locked: false, shown: {}, style: 'campo', hunting: false, rec: false };
-const send = (_bK) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _bK); } };
-const clickIn = (_bL) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_bL)}).click()`, true).catch(() => {}); } };
+const send = (_cd) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _cd); } };
+const clickIn = (_ce) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_ce)}).click()`, true).catch(() => {}); } };
 const PANELS = ['log', 'tune', 'rig', 'c7100'];
 const STYLES = ['campo', 'notte', 'valvole', 'chiaro', 'fosfori', 'contrasto'];
 const BANDS = ['160', '80', '60', '40', '30', '20', '17', '15', '12', '10', '6', '2', '70cm'];
 let awakeId = -1;
-function keepAwake(_bM) {
-  if (_bM && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
-  else if (!_bM && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
+function keepAwake(_cf) {
+  if (_cf && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
+  else if (!_cf && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
 }
-ipcMain.on('app-state', (_bN, _bO) => { if (_bO && typeof _bO === 'object') { ui = { ...ui, ..._bO }; keepAwake(!!ui.listening); buildMenu(); } });
+ipcMain.on('app-state', (_cg, _ch) => { if (_ch && typeof _ch === 'object') { ui = { ...ui, ..._ch }; keepAwake(!!ui.listening); buildMenu(); } });
 function buildMenu() {
-  const _bP = { label: L('about'), click: () => send('welcome') };
-  const _bQ = { label: L('checkUpd'), click: () => send('update') };
-  const _bR = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
-  const _bS = [
+  const _ci = { label: L('about'), click: () => send('welcome') };
+  const _cj = { label: L('checkUpd'), click: () => send('update') };
+  const _ck = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
+  const _cl = [
     ...(isMac ? [{
       label: 'CWIU1MVI',
       submenu: [
-        _bP, _bQ, { type: 'separator' }, _bR,
+        _ci, _cj, { type: 'separator' }, _ck,
         { type: 'separator' },
         { role: 'services', label: L('services') },
         { type: 'separator' },
@@ -507,7 +536,7 @@ function buildMenu() {
         { label: L('exportAdif'), accelerator: 'CmdOrCtrl+E', click: () => send('adif') },
         { label: L('openLog'), accelerator: 'CmdOrCtrl+Shift+O', click: () => send('logs') },
         { type: 'separator' },
-        ...(isMac ? [] : [_bR, { type: 'separator' }]),
+        ...(isMac ? [] : [_ck, { type: 'separator' }]),
         isMac ? { role: 'close', label: L('closeWin') } : { role: 'quit', label: L('quit') },
       ],
     },
@@ -531,7 +560,7 @@ function buildMenu() {
         { label: L('scan'), enabled: !!ui.cat && !!ui.listening, click: () => send('scan') },
         { label: L('hunt'), type: 'checkbox', checked: !!ui.hunting, accelerator: 'CmdOrCtrl+Shift+F', enabled: !!ui.cat && !!ui.listening, click: () => send('hunt') },
         { label: L('chase'), type: 'checkbox', checked: !!ui.chasing, accelerator: 'CmdOrCtrl+Shift+S', enabled: !!ui.cat && !!ui.listening, click: () => send('chase') },
-        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_bT) => ({ label: /cm/.test(_bT) ? _bT.replace('cm', ' cm') : `${_bT} m`, click: () => send('band:' + _bT) })) },
+        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_cm) => ({ label: /cm/.test(_cm) ? _cm.replace('cm', ' cm') : `${_cm} m`, click: () => send('band:' + _cm) })) },
         { type: 'separator' },
         { label: ui.rec ? L('recStop') : L('rec'), accelerator: 'CmdOrCtrl+Shift+R', enabled: !!ui.listening || !!ui.rec, click: () => send('rec') },
       ],
@@ -543,10 +572,10 @@ function buildMenu() {
         { label: L('vSta'), accelerator: 'CmdOrCtrl+2', click: () => send('view:sta') },
         { label: 'Cluster', accelerator: 'CmdOrCtrl+3', click: () => send('view:cl') },
         { type: 'separator' },
-        { label: L('style'), submenu: STYLES.map((_bU) => ({ label: L('st_' + _bU), type: 'radio', checked: ui.style === _bU, click: () => send('style:' + _bU) })) },
-        { label: L('language'), submenu: LANGS.map(([_bV, _bW]) => ({ label: _bW, type: 'radio', checked: LANG === _bV, click: () => send('lang:' + _bV) })) },
+        { label: L('style'), submenu: STYLES.map((_cn) => ({ label: L('st_' + _cn), type: 'radio', checked: ui.style === _cn, click: () => send('style:' + _cn) })) },
+        { label: L('language'), submenu: LANGS.map(([_co, _cp]) => ({ label: _cp, type: 'radio', checked: LANG === _co, click: () => send('lang:' + _co) })) },
         { type: 'separator' },
-        ...PANELS.map((_bX) => ({ label: L('p_' + _bX), type: 'checkbox', checked: ui.shown[_bX] !== false, click: () => send('mod:' + _bX) })),
+        ...PANELS.map((_cq) => ({ label: L('p_' + _cq), type: 'checkbox', checked: ui.shown[_cq] !== false, click: () => send('mod:' + _cq) })),
         { type: 'separator' },
         { label: L('lock'), type: 'checkbox', checked: !!ui.locked, click: () => send('lock') },
         { label: L('resetLayout'), click: () => send('reset') },
@@ -568,7 +597,7 @@ function buildMenu() {
       role: 'help',
       label: L('help'),
       submenu: [
-        ...(isMac ? [] : [_bP, _bQ, { type: 'separator' }]),
+        ...(isMac ? [] : [_ci, _cj, { type: 'separator' }]),
         { label: L('guide'), accelerator: 'F1', click: () => send('guide') },
         { label: L('cfg7100'), click: () => send('guide:ic7100') },
         { label: L('cfg7300'), click: () => send('guide:ic7300') },
@@ -580,16 +609,17 @@ function buildMenu() {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(_bS));
+  Menu.setApplicationMenu(Menu.buildFromTemplate(_cl));
 }
 app.whenReady().then(async () => {
+  mainLog('avviata', app.getVersion() + ' · ' + process.platform);
   initLang();
   setupPermissions(session.defaultSession);
   buildMenu();
   openWindow();
   app.on('activate', openWindow);
   if (isMac) {
-    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_bY) { /* si può concedere dopo */ }
+    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_cr) { /* si può concedere dopo */ }
   }
 });
 app.on('window-all-closed', () => app.quit());
