@@ -215,7 +215,26 @@ jobs:
         run: |
           V=$(node -p "require('./package.json').version")
           TAG="${GITHUB_REF_NAME}"; [ "$GITHUB_REF_TYPE" = "tag" ] || TAG="v${V}-build${GITHUB_RUN_NUMBER}"
-          cp build/release-notes.md notes.md
+          # installer con nome fisso: si scaricano sempre dallo stesso indirizzo (i .zip con la versione servono agli aggiornamenti)
+          for f in out/*-Mac.pkg out/*-Setup.exe out/*-Linux.deb out/*-Linux.AppImage; do
+            [ -f "$f" ] && mv "$f" "out/CWIU1MVI-${f##*-}"
+          done
+          ls out
+          D="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+          {
+            echo "## Scarica · Download"
+            echo
+            echo "| Sistema · System | |"
+            echo "|---|---|"
+            echo "| **Mac** con chip Apple (M1, M2, M3, M4) | [⬇ CWIU1MVI-Mac.pkg](${D}/CWIU1MVI-Mac.pkg) |"
+            echo "| **Windows** 10 / 11 | [⬇ CWIU1MVI-Setup.exe](${D}/CWIU1MVI-Setup.exe) |"
+            echo "| **Linux** Debian, Ubuntu, Mint | [⬇ CWIU1MVI-Linux.deb](${D}/CWIU1MVI-Linux.deb) |"
+            echo "| **Linux** altre distribuzioni | [⬇ CWIU1MVI-Linux.AppImage](${D}/CWIU1MVI-Linux.AppImage) |"
+            echo
+            echo "I file .zip servono agli aggiornamenti automatici: non serve scaricarli."
+            echo
+            cat build/release-notes.md
+          } > notes.md
           gh release delete "$TAG" -y 2>/dev/null || true
           gh release create "$TAG" out/* --title "CWIU1MVI $V (build ${GITHUB_RUN_NUMBER})" --notes-file notes.md --target "$GITHUB_SHA" --latest
       - name: Toglie le release vecchie
