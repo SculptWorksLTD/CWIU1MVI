@@ -1763,7 +1763,7 @@ function attach(_s){
   const _t=ensureCtx();dec=newDecoder(_t.sampleRate);
   node=_t.createScriptProcessor(2048,2,1);
   let _u=null;
-  node.onaudioprocess=_v=>{const _w=_v.inputBuffer,_x=$("chan").value,_y=_w.numberOfChannels,_z=inGain;
+  node.onaudioprocess=_v=>{AUD.at=Date.now();const _w=_v.inputBuffer,_x=$("chan").value,_y=_w.numberOfChannels,_z=inGain;
     let _A;
     if(_y===1||_x!=="mix")_A=_w.getChannelData(_y===1?0:+_x);
     else{const _B=_w.getChannelData(0),_C=_w.getChannelData(1);if(!_u||_u.length!==_B.length)_u=new Float32Array(_B.length);for(let _D=0;_D<_B.length;_D++)_u[_D]=(_B[_D]+_C[_D])*0.5;_A=_u}
@@ -1784,98 +1784,107 @@ async function startListening(_J){
     if(SRC==="usb"&&_N&&!$("dev").value&&_O&&_O.getSettings().deviceId!==_N.deviceId){
       stream.getTracks().forEach(_P=>_P.stop());$("dev").value=_N.deviceId;stream=await openInput(_N.deviceId)}
   }catch(_Q){
+    evLog("ascolto non avviato",((_Q&&_Q.name)||"")+" "+((_Q&&_Q.message)||""));
     msg(T("Non riesco ad aprire l'ingresso audio. Controlla che la radio sia collegata e, su Mac, che CWIU1MVI abbia il permesso Microfono in Impostazioni di Sistema › Privacy e sicurezza."),true);
     return false;
   }
-  attach(ensureCtx().createMediaStreamSource(stream));
-  mode="mic";evLog("ascolto avviato","");$("micBtn").classList.add("live");$("micBtn").querySelector(".t").textContent=T("Ferma ascolto");
-  const _R=(stream.getAudioTracks()[0]||{}).label||T("ingresso audio");setState(T("in ascolto"));
+  attach(ensureCtx().createMediaStreamSource(stream));AUD.at=Date.now();
+  {const _R=stream.getAudioTracks()[0],_S=stream;if(_R)_R.onended=()=>{if(mode==="mic"&&stream===_S)audioRecover("dispositivo audio scollegato ("+(_R.label||"")+")")}}
+  mode="mic";evLog("ascolto avviato",((stream.getAudioTracks()[0]||{}).label||"")+(ctx?" · "+ctx.state:""));$("micBtn").classList.add("live");$("micBtn").querySelector(".t").textContent=T("Ferma ascolto");
+  const _T=(stream.getAudioTracks()[0]||{}).label||T("ingresso audio");setState(T("in ascolto"));
   if(rig.pitch&&rig.cw)applyPitch();
-  msg(T("In ascolto da: {0}",_R)+(/usb audio codec|icom|usb/i.test(_R)?" "+T("(audio USB della radio)."):"."));
+  msg(T("In ascolto da: {0}",_T)+(/usb audio codec|icom|usb/i.test(_T)?" "+T("(audio USB della radio)."):"."));
   return true;
 }
 $("micBtn").onclick=()=>{if(mode==="mic")stopAll();else startListening()};
-async function openInput(_S){
-  const _T={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:{ideal:2}};
-  if(_S)_T.deviceId={exact:_S};
-  return navigator.mediaDevices.getUserMedia({audio:_T});
+const AUD={at:0,restartAt:0};
+function audioRecover(_U){const _V=Date.now();if(_V-AUD.restartAt<30000)return;AUD.restartAt=_V;
+  evLog("ascolto: riavvio automatico",_U);const _W=typeof chase!=="undefined"&&chase.on;
+  startListening(true).then(_X=>{evLog(_X?"ascolto ripreso":"ascolto non ripreso","");
+    try{if(_X&&_W&&!chase.on&&rig.port)chaseStart()}catch(_Y){}}).catch(_Z=>evLog("ascolto non ripreso",String(_Z&&_Z.message||_Z)))}
+setInterval(()=>{if(mode!=="mic")return;try{if(ctx&&ctx.state==="suspended")ctx.resume()}catch(_aa){}
+  if(AUD.at&&Date.now()-AUD.at>8000)audioRecover("niente audio da "+Math.round((Date.now()-AUD.at)/1000)+" s"+(ctx?" (contesto audio "+ctx.state+")":""))},3000);
+async function openInput(_ab){
+  const _ac={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:{ideal:2}};
+  if(_ab)_ac.deviceId={exact:_ab};
+  return navigator.mediaDevices.getUserMedia({audio:_ac});
 }
 async function listDevices(){
-  let _U=null;
-  try{const _V=(await navigator.mediaDevices.enumerateDevices()).filter(_W=>_W.kind==="audioinput");
-    const _X=$("dev"),_Y=_X.value;_X.textContent="";
-    const _Z=document.createElement("option");_Z.value="";_Z.textContent=T("Scelto in automatico");_X.appendChild(_Z);
-    _V.forEach((_aa,_ab)=>{const _ac=document.createElement("option");_ac.value=_aa.deviceId;_ac.textContent=_aa.label||T("Ingresso {0}",_ab+1);_X.appendChild(_ac);
-      if(!_U&&/usb audio codec|icom|ic-\d|kenwood|yaesu|elecraft|xiegu/i.test(_aa.label))_U=_aa});
-    if(_Y)_X.value=_Y;
-  }catch(_ad){}
-  return _U;
+  let _ad=null;
+  try{const _ae=(await navigator.mediaDevices.enumerateDevices()).filter(_af=>_af.kind==="audioinput");
+    const _ag=$("dev"),_ah=_ag.value;_ag.textContent="";
+    const _ai=document.createElement("option");_ai.value="";_ai.textContent=T("Scelto in automatico");_ag.appendChild(_ai);
+    _ae.forEach((_aj,_ak)=>{const _al=document.createElement("option");_al.value=_aj.deviceId;_al.textContent=_aj.label||T("Ingresso {0}",_ak+1);_ag.appendChild(_al);
+      if(!_ad&&/usb audio codec|icom|ic-\d|kenwood|yaesu|elecraft|xiegu/i.test(_aj.label))_ad=_aj});
+    if(_ah)_ag.value=_ah;
+  }catch(_am){}
+  return _ad;
 }
-$("dev").onchange=()=>{try{localStorage.setItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev",$("dev").value)}catch(_ae){}if(mode==="mic")startListening()};
-function setSrc(_af,_ag){SRC=_af==="an"?"an":"usb";try{localStorage.setItem("cwiu-src",SRC)}catch(_ah){}
-  $("srcSeg").querySelectorAll("button").forEach(_ai=>_ai.setAttribute("aria-pressed",String(_ai.dataset.v===SRC)));$("anRow").hidden=SRC!=="an";
-  let _aj=0;try{_aj=+localStorage.getItem("cwiu-an-gain")||0}catch(_ak){}$("anGain").value=_aj;$("anGainV").textContent=(_aj>0?"+":"")+_aj+" dB";inGain=SRC==="an"?Math.pow(10,_aj/20):1;
-  if(_ag){$("dev").value="";if(mode==="mic")startListening()}}
-$("srcSeg").onclick=_al=>{const _am=_al.target.closest("button");if(_am)setSrc(_am.dataset.v,true)};
-$("anGain").oninput=()=>{const _an=+$("anGain").value;$("anGainV").textContent=(_an>0?"+":"")+_an+" dB";inGain=Math.pow(10,_an/20);try{localStorage.setItem("cwiu-an-gain",_an)}catch(_ao){}};
+$("dev").onchange=()=>{try{localStorage.setItem(SRC==="an"?"cwiu-dev-an":"cwiu-dev",$("dev").value)}catch(_an){}if(mode==="mic")startListening()};
+function setSrc(_ao,_ap){SRC=_ao==="an"?"an":"usb";try{localStorage.setItem("cwiu-src",SRC)}catch(_aq){}
+  $("srcSeg").querySelectorAll("button").forEach(_ar=>_ar.setAttribute("aria-pressed",String(_ar.dataset.v===SRC)));$("anRow").hidden=SRC!=="an";
+  let _as=0;try{_as=+localStorage.getItem("cwiu-an-gain")||0}catch(_at){}$("anGain").value=_as;$("anGainV").textContent=(_as>0?"+":"")+_as+" dB";inGain=SRC==="an"?Math.pow(10,_as/20):1;
+  if(_ap){$("dev").value="";if(mode==="mic")startListening()}}
+$("srcSeg").onclick=_au=>{const _av=_au.target.closest("button");if(_av)setSrc(_av.dataset.v,true)};
+$("anGain").oninput=()=>{const _aw=+$("anGain").value;$("anGainV").textContent=(_aw>0?"+":"")+_aw+" dB";inGain=Math.pow(10,_aw/20);try{localStorage.setItem("cwiu-an-gain",_aw)}catch(_ax){}};
 setSrc(SRC,false);
 const REC={on:false,buf:[],n:0,total:0,max:0,fs:0,name:"",busy:Promise.resolve()};
 const REC_MAX_S=3600;
-async function recStart(_ap){
-  if(_ap!==true)REC.chain=0;
+async function recStart(_ay){
+  if(_ay!==true)REC.chain=0;
   if(REC.on){recStop();return}
   if(!dec||mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”."),true);return}
   if(!window.cwiuLog||!window.cwiuLog.recOpen){msg(T("La registrazione si salva solo nell'app per Mac e Windows."),true);return}
-  const _aq=new Date(),_ar=_as=>String(_as).padStart(2,"0");
-  const _at=(typeof rig!=="undefined"&&rig.freq)?"-"+Math.round(rig.freq/1000):"";
-  REC.name="registrazione-"+_aq.getFullYear()+_ar(_aq.getMonth()+1)+_ar(_aq.getDate())+"-"+_ar(_aq.getHours())+_ar(_aq.getMinutes())+_ar(_aq.getSeconds())+_at+".wav";
+  const _az=new Date(),_aA=_aB=>String(_aB).padStart(2,"0");
+  const _aC=(typeof rig!=="undefined"&&rig.freq)?"-"+Math.round(rig.freq/1000):"";
+  REC.name="registrazione-"+_az.getFullYear()+_aA(_az.getMonth()+1)+_aA(_az.getDate())+"-"+_aA(_az.getHours())+_aA(_az.getMinutes())+_aA(_az.getSeconds())+_aC+".wav";
   REC.fs=Math.round(dec.fs);
-  let _au=false;try{_au=await window.cwiuLog.recOpen(REC.name,REC.fs)}catch(_av){}
-  if(!_au){msg(T("Non riesco a salvare la registrazione."),true);return}
+  let _aD=false;try{_aD=await window.cwiuLog.recOpen(REC.name,REC.fs)}catch(_aE){}
+  if(!_aD){msg(T("Non riesco a salvare la registrazione."),true);return}
   REC.on=true;REC.buf=[];REC.n=0;REC.total=0;REC.max=REC.fs*REC_MAX_S;
   $("recBtn").textContent=T("■ Ferma registrazione");$("recBtn").classList.add("live");msg(T("Registrazione dell'audio in corso…"));
   if(typeof menuState==="function")menuState();
 }
 function recFlush(){
-  if(!REC.n)return;const _aw=new Int16Array(REC.n);let _ax=0;
-  for(const _ay of REC.buf)for(let _az=0;_az<_ay.length;_az++){const _aA=Math.max(-1,Math.min(1,_ay[_az]));_aw[_ax++]=Math.round(_aA*32767)}
-  REC.buf=[];REC.n=0;const _aB=new Uint8Array(_aw.buffer);
-  REC.busy=REC.busy.then(()=>window.cwiuLog.recAppend(_aB)).catch(()=>{});
+  if(!REC.n)return;const _aF=new Int16Array(REC.n);let _aG=0;
+  for(const _aH of REC.buf)for(let _aI=0;_aI<_aH.length;_aI++){const _aJ=Math.max(-1,Math.min(1,_aH[_aI]));_aF[_aG++]=Math.round(_aJ*32767)}
+  REC.buf=[];REC.n=0;const _aK=new Uint8Array(_aF.buffer);
+  REC.busy=REC.busy.then(()=>window.cwiuLog.recAppend(_aK)).catch(()=>{});
 }
 function recRoll(){recStop();REC.chain=(REC.chain||0)+1;if(REC.chain<24)REC.busy=REC.busy.then(()=>{if(!REC.on)return recStart(true)}).catch(()=>{})}
-function recPush(_aC){if(!REC.on)return;const _aD=Math.min(_aC.length,REC.max-REC.total);if(_aD<=0){recRoll();return}
-  REC.buf.push(Float32Array.from(_aC.subarray(0,_aD)));REC.n+=_aD;REC.total+=_aD;
+function recPush(_aL){if(!REC.on)return;const _aM=Math.min(_aL.length,REC.max-REC.total);if(_aM<=0){recRoll();return}
+  REC.buf.push(Float32Array.from(_aL.subarray(0,_aM)));REC.n+=_aM;REC.total+=_aM;
   if(REC.n>=REC.fs*4)recFlush();
   if(REC.total>=REC.max)recRoll()}
 const CLIP={on:false,ring:[],n:0,fs:0,saved:0,max:400};
 CLIP.on=!!window.cwiuLog;
-function clipPush(_aE,_aF){CLIP.fs=Math.round(_aF);CLIP.ring.push(Float32Array.from(_aE));CLIP.n+=_aE.length;
-  const _aG=CLIP.fs*100;while(CLIP.n>_aG&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
-function clipSave(_aH,_aI){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
+function clipPush(_aN,_aO){CLIP.fs=Math.round(_aO);CLIP.ring.push(Float32Array.from(_aN));CLIP.n+=_aN.length;
+  const _aP=CLIP.fs*100;while(CLIP.n>_aP&&CLIP.ring.length>1){CLIP.n-=CLIP.ring[0].length;CLIP.ring.shift()}}
+function clipSave(_aQ,_aR){   // gli ultimi `secs` secondi → file WAV nella cartella del log; restituisce il nome o ""
   if(!CLIP.on||REC.on||!CLIP.fs||!window.cwiuLog||!window.cwiuLog.recOpen||CLIP.saved>=CLIP.max)return "";
-  _aH=String(_aH).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
-  const _aJ=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aI))*CLIP.fs)),_aK=new Int16Array(_aJ);let _aL=_aJ;
-  for(let _aM=CLIP.ring.length-1;_aM>=0&&_aL>0;_aM--){const _aN=CLIP.ring[_aM];for(let _aO=_aN.length-1;_aO>=0&&_aL>0;_aO--){const _aP=Math.max(-1,Math.min(1,_aN[_aO]));_aK[--_aL]=Math.round(_aP*32767)}}
-  const _aQ=new Uint8Array(_aK.buffer),_aR=CLIP.fs;CLIP.saved++;
-  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aH,_aR)){await window.cwiuLog.recAppend(_aQ);await window.cwiuLog.recClose()}}).catch(()=>{});
-  return _aH}
-function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _aS=prefs();_aS.clips=CLIP.on;savePrefs(_aS);clipUi();
+  _aQ=String(_aQ).toLowerCase().replace(/[^a-z0-9-]+/g,"-").slice(0,56)+".wav";
+  const _aS=Math.min(CLIP.n,Math.round(Math.min(95,Math.max(4,_aR))*CLIP.fs)),_aT=new Int16Array(_aS);let _aU=_aS;
+  for(let _aV=CLIP.ring.length-1;_aV>=0&&_aU>0;_aV--){const _aW=CLIP.ring[_aV];for(let _aX=_aW.length-1;_aX>=0&&_aU>0;_aX--){const _aY=Math.max(-1,Math.min(1,_aW[_aX]));_aT[--_aU]=Math.round(_aY*32767)}}
+  const _aZ=new Uint8Array(_aT.buffer),_ba=CLIP.fs;CLIP.saved++;
+  REC.busy=REC.busy.then(async()=>{if(REC.on)return;if(await window.cwiuLog.recOpen(_aQ,_ba)){await window.cwiuLog.recAppend(_aZ);await window.cwiuLog.recClose()}}).catch(()=>{});
+  return _aQ}
+function clipToggle(){CLIP.on=!CLIP.on;if(!CLIP.on){CLIP.ring=[];CLIP.n=0}const _bb=prefs();_bb.clips=CLIP.on;savePrefs(_bb);clipUi();
   msg(CLIP.on?T("Ritagli attivi: durante l'inseguimento salvo l'audio delle stazioni con segnale ma non lette."):T("Ritagli disattivati."))}
-function clipUi(){const _aT=$("clipBtn");if(!_aT)return;_aT.classList.toggle("live",CLIP.on);_aT.setAttribute("aria-pressed",CLIP.on?"true":"false")}
+function clipUi(){const _bc=$("clipBtn");if(!_bc)return;_bc.classList.toggle("live",CLIP.on);_bc.setAttribute("aria-pressed",CLIP.on?"true":"false")}
 function recStop(){
   if(!REC.on)return;REC.on=false;recFlush();
   $("recBtn").textContent=T("⏺ Registra");$("recBtn").classList.remove("live");
-  const _aU=REC.name,_aV=Math.max(1,Math.round(REC.total/REC.fs/60));
-  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_aW=>{if(_aW)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_aU,_aV));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
+  const _bd=REC.name,_be=Math.max(1,Math.round(REC.total/REC.fs/60));
+  REC.busy=REC.busy.then(()=>window.cwiuLog.recClose()).then(_bf=>{if(_bf)msg(T("Registrazione salvata nella cartella del log: {0} ({1} min)",_bd,_be));else msg(T("Non riesco a salvare la registrazione."),true)}).catch(()=>msg(T("Non riesco a salvare la registrazione."),true));
   if(typeof menuState==="function")menuState();
 }
-function splitWord(_aX){
-  let _aY;
-  if((_aY=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_aX)))return ["CQ",_aY[1]];
-  if((_aY=/^DE([A-Z0-9\/]{3,})$/.exec(_aX))&&isCall(_aY[1]))return ["DE",_aY[1]];
-  if((_aY=/^([A-Z0-9\/]{3,})DE$/.exec(_aX))&&isCall(_aY[1]))return [_aY[1],"DE"];
-  if((_aY=/^(TU|TNX|R)(73|5NN|599)$/.exec(_aX)))return [_aY[1],_aY[2]];
-  return [_aX];
+function splitWord(_bg){
+  let _bh;
+  if((_bh=/^CQ(CQ|DE|DX|TEST|POTA|SOTA)$/.exec(_bg)))return ["CQ",_bh[1]];
+  if((_bh=/^DE([A-Z0-9\/]{3,})$/.exec(_bg))&&isCall(_bh[1]))return ["DE",_bh[1]];
+  if((_bh=/^([A-Z0-9\/]{3,})DE$/.exec(_bg))&&isCall(_bh[1]))return [_bh[1],"DE"];
+  if((_bh=/^(TU|TNX|R)(73|5NN|599)$/.exec(_bg)))return [_bh[1],_bh[2]];
+  return [_bg];
 }
 </script>
 <script>
@@ -4480,7 +4489,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.21";
+const WEB_VERSION="1.12.22";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
