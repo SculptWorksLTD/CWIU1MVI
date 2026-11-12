@@ -1,9 +1,9 @@
 {
-  "web": "1.12.22",
+  "web": "1.12.23",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.22.html",
-  "size": 749587,
-  "sha256": "e5facab370c65a31d0d7e1b90e664257c58f85cbc466be9ecccb6f2d38fa5825",
-  "date": "2026-11-12 17:38 UTC",
-  "notes": "Ascolto: se l'audio si ferma con l'ascolto acceso, l'ingresso si riapre da solo"
+  "file": "cwiu1mvi-1.12.23.html",
+  "size": 753394,
+  "sha256": "94d1af328118ffbf87761b1b42debce5e2b7838b5d552547ac67ccceba41d636",
+  "date": "2026-11-12 23:46 UTC",
+  "notes": "Waterfall come uno skimmer: clic su un nominativo per sintonizzarlo e, in modalità QSO, preparare il collegamento (utile nei contest)"
 }

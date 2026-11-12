@@ -2219,12 +2219,12 @@ function drawWFOverlay(_fe,_ff,_fg,_fh){
   const _fn=WFPAL.c[2],_fo=_fp=>"rgba("+_fn[0]+","+_fn[1]+","+_fn[2]+","+_fp+")";
   const _fq=Math.round(_fk(dec.freq))+0.5;_fj.strokeStyle=_fo(0.55);_fj.lineWidth=Math.max(1,_fg);_fj.setLineDash([3*_fg,3*_fg]);_fj.beginPath();_fj.moveTo(_fq,0);_fj.lineTo(_fq,_ff);_fj.stroke();_fj.setLineDash([]);
   _fj.fillStyle=_fo(0.95);_fj.beginPath();_fj.moveTo(_fq-5*_fg,0);_fj.lineTo(_fq+5*_fg,0);_fj.lineTo(_fq,7*_fg);_fj.closePath();_fj.fill();
-  try{const _fr=Math.round(10*_fg);_fj.font="600 "+_fr+"px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-lcd")||"monospace");_fj.textBaseline="top";const _fs=[],_ft=performance.now(),_fu=[];
-    for(const _fv of SK.list){const _fw=_fv.msg,_fx=(_fw&&_fw.from)||_fv.from;if(!_fx||_ft-_fv.last>25000||_fv.f<WF.lo||_fv.f>WF.hi)continue;_fu.push({f:_fv.f,call:_fx+(_fw&&_fw.from&&_fw.guess&&!_fv.from?"?":""),k:0})}
+  try{const _fr=Math.round(10*_fg);_fj.font="600 "+_fr+"px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-lcd")||"monospace");_fj.textBaseline="top";const _fs=[],_ft=performance.now(),_fu=[];WF.hits=[];
+    for(const _fv of SK.list){const _fw=_fv.msg,_fx=(_fw&&_fw.from)||_fv.from;if(!_fx||_ft-_fv.last>25000||_fv.f<WF.lo||_fv.f>WF.hi)continue;_fu.push({f:_fv.f,call:_fx+(_fw&&_fw.from&&_fw.guess&&!_fv.from?"?":""),k:0,sk:_fv,dx:_fx})}
     if(rig.port&&rig.freq&&typeof CL!=="undefined"){const _fy=Date.now(),_fz=cwSide(),_fA=rig.pitch||600;for(const _fB of CL.spots.values()){if(_fy-_fB.t>5*60000)continue;const _fC=_fA+(_fB.hz-rig.freq)*_fz;if(_fC<WF.lo+20||_fC>WF.hi-20)continue;
-      if(_fu.some(_fD=>_fD.call.replace("?","")===_fB.call))continue;_fu.push({f:_fC,call:_fB.call,k:1})}}
+      if(_fu.some(_fD=>_fD.call.replace("?","")===_fB.call))continue;_fu.push({f:_fC,call:_fB.call,k:1,rf:_fB.hz,dx:_fB.call})}}
     for(const _fE of _fu){const _fF=_fj.measureText(_fE.call).width+8*_fg;let _fG=Math.round(_fk(_fE.f)-_fF/2);_fG=Math.max(2,Math.min(_fe-_fF-2,_fG));let _fH=0;while(_fs.some(_fI=>_fI.row===_fH&&_fG<_fI.x1+4&&_fG+_fF>_fI.x0-4))_fH++;if(_fH>2)continue;_fs.push({row:_fH,x0:_fG,x1:_fG+_fF});
-      const _fJ=Math.round(9*_fg+_fH*(_fr+8*_fg)),_fK=_fr+5*_fg;_fj.fillStyle=_fE.k?"rgba(0,0,0,.5)":"rgba(0,0,0,.75)";_fj.fillRect(_fG,_fJ,_fF,_fK);_fj.strokeStyle=_fo(_fE.k?0.55:0.9);_fj.lineWidth=1;if(_fE.k)_fj.setLineDash([2*_fg,2*_fg]);_fj.strokeRect(_fG+0.5,_fJ+0.5,_fF-1,_fK-1);_fj.setLineDash([]);
+      const _fJ=Math.round(9*_fg+_fH*(_fr+8*_fg)),_fK=_fr+5*_fg;WF.hits.push({x0:_fG-3*_fg,y0:_fJ-3*_fg,x1:_fG+_fF+3*_fg,y1:_fJ+_fK+3*_fg,it:_fE});_fj.fillStyle=_fE.k?"rgba(0,0,0,.5)":"rgba(0,0,0,.75)";_fj.fillRect(_fG,_fJ,_fF,_fK);_fj.strokeStyle=_fo(_fE.k?0.55:0.9);_fj.lineWidth=1;if(_fE.k)_fj.setLineDash([2*_fg,2*_fg]);_fj.strokeRect(_fG+0.5,_fJ+0.5,_fF-1,_fK-1);_fj.setLineDash([]);
       _fj.fillStyle=_fo(_fE.k?0.7:1);_fj.fillText(_fE.call,_fG+4*_fg,_fJ+2.5*_fg)}}catch(_fL){}
 }
 function drawWFAxis(){
@@ -2233,36 +2233,52 @@ function drawWFAxis(){
     _fQ.textContent=_fO?(afToRf(_fP)/1000).toFixed(2):_fP+" Hz";_fM.appendChild(_fQ)}
   $("wfInfo").textContent=_fO?(cwSide()>0?T("asse in kHz · lato superiore"):T("asse in kHz · lato inferiore")):T("asse in Hz audio");
 }
-$("wf").addEventListener("click",_fR=>{
-  const _fS=_fR.currentTarget.getBoundingClientRect(),_fT=wfAf((_fR.clientX-_fS.left)/_fS.width);
-  const _fU=wfAnalyze();let _fV=_fT;if(_fU){let _fW=0;for(let _fX=0;_fX<_fU.sc.length;_fX++){const _fY=(_fU.b0+_fX)*_fU.df;if(Math.abs(_fY-_fT)<=40&&_fU.sc[_fX]>_fW){_fW=_fU.sc[_fX];_fV=_fY}}}
-  if(rig.port&&rig.freq)tuneToSignal(afToRf(_fV),_fV-(rig.pitch||600));
-  else if(dec){dec.setFreq(Math.round(_fV/5)*5)}
+function wfHit(_fR){if(mode!=="mic"||!WF.hits||!WF.hits.length)return null;const _fS=$("wf"),_fT=_fS.getBoundingClientRect();if(!_fT.width)return null;
+  const _fU=(_fR.clientX-_fT.left)*_fS.width/_fT.width,_fV=(_fR.clientY-_fT.top)*_fS.height/_fT.height;return (WF.hits.find(_fW=>_fU>=_fW.x0&&_fU<=_fW.x1&&_fV>=_fW.y0&&_fV<=_fW.y1)||{}).it||null}
+function wfPickCall(_fX){
+  try{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto una stazione."),"clic su stazione")}catch(_fY){}
+  try{if(hunt.on)huntStop()}catch(_fZ){}
+  const _ga=!!(rig.port&&rig.freq),_gb=_fX.sk,_gc=_fX.rf||(_ga?afToRf(_fX.f):0);
+  if(_ga&&_gc){if(_gb)tuneToSignal(Math.round(_gc/10)*10,_fX.f-(rig.pitch||600));else cat.setFreq(Math.round(_gc/10)*10)}
+  else if(dec&&_gb)dec.setFreq(Math.round(_fX.f/5)*5);
+  evLog("clic sul waterfall",_fX.dx);
+  if(typeof setDx==="function"&&typeof qp==="function"&&qp().op==="qso"){
+    const _gd=_gb&&_gb.msg?Object.assign({},_gb.msg,{rf:_gc}):{rf:_gc,f:_fX.f,db:_gb&&_gb.d?_gb.d.snr:20,text:""};setDx(_fX.dx,_gd,true)}
+  else if(typeof hqLookup==="function")hqLookup(_fX.dx);
+}
+$("wf").addEventListener("mousemove",_ge=>{_ge.currentTarget.style.cursor=wfHit(_ge)?"pointer":""});
+$("wf").addEventListener("mouseleave",_gf=>{_gf.currentTarget.style.cursor=""});
+$("wf").addEventListener("click",_gg=>{
+  {const _gh=wfHit(_gg);if(_gh){wfPickCall(_gh);return}}
+  const _gi=_gg.currentTarget.getBoundingClientRect(),_gj=wfAf((_gg.clientX-_gi.left)/_gi.width);
+  const _gk=wfAnalyze();let _gl=_gj;if(_gk){let _gm=0;for(let _gn=0;_gn<_gk.sc.length;_gn++){const _go=(_gk.b0+_gn)*_gk.df;if(Math.abs(_go-_gj)<=40&&_gk.sc[_gn]>_gm){_gm=_gk.sc[_gn];_gl=_go}}}
+  if(rig.port&&rig.freq)tuneToSignal(afToRf(_gl),_gl-(rig.pitch||600));
+  else if(dec){dec.setFreq(Math.round(_gl/5)*5)}
 });
-function tuneToSignal(_fZ,_ga){
-  cat.setFreq(_fZ);if(Math.abs(_ga)<40)return;
-  const _gb=cwSide(),_gc=rig.pitch||600;
-  setTimeout(()=>{const _gd=wfAnalyze();if(!_gd)return;
-    const _ge=_gf=>{let _gg=0;for(let _gh=0;_gh<_gd.sc.length;_gh++){const _gi=(_gd.b0+_gh)*_gd.df;if(Math.abs(_gi-_gf)<=30)_gg=Math.max(_gg,_gd.sc[_gh])}return _gg};
-    const _gj=_ge(_gc),_gk=_ge(_gc+2*_ga);
-    if(_gk>4&&_gk>2*_gj){learnSide(-_gb);cat.setFreq(rig.freq+(-_gb)*2*_ga);msg(T("Lato CW della radio riconosciuto e memorizzato."))}
+function tuneToSignal(_gp,_gq){
+  cat.setFreq(_gp);if(Math.abs(_gq)<40)return;
+  const _gr=cwSide(),_gs=rig.pitch||600;
+  setTimeout(()=>{const _gt=wfAnalyze();if(!_gt)return;
+    const _gu=_gv=>{let _gw=0;for(let _gx=0;_gx<_gt.sc.length;_gx++){const _gy=(_gt.b0+_gx)*_gt.df;if(Math.abs(_gy-_gv)<=30)_gw=Math.max(_gw,_gt.sc[_gx])}return _gw};
+    const _gz=_gu(_gs),_gA=_gu(_gs+2*_gq);
+    if(_gA>4&&_gA>2*_gz){learnSide(-_gr);cat.setFreq(rig.freq+(-_gr)*2*_gq);msg(T("Lato CW della radio riconosciuto e memorizzato."))}
   },900);
 }
 const scan={on:false,map:null,lo:0,hi:0,res:50,step:1000,dial:0,steps:[],i:0,timer:0,restoreF:0,restoreFil:null,rows:[],acc:null};
-function scanCollect(_gl){
-  if(!scan.acc||!scan.collecting)return;const _gm=rig.pitch||600,_gn=scan.step/2+60;
-  for(let _go=0;_go<_gl.sc.length;_go++){const _gp=(_gl.b0+_go)*_gl.df;if(Math.abs(_gp-_gm)>_gn)continue;
-    const _gq=scan.dial+cwSide()*(_gp-_gm),_gr=Math.floor((_gq-scan.lo)/scan.res);if(_gr>=0&&_gr<scan.acc.length&&_gl.sc[_go]>scan.acc[_gr])scan.acc[_gr]=_gl.sc[_go]}
+function scanCollect(_gB){
+  if(!scan.acc||!scan.collecting)return;const _gC=rig.pitch||600,_gD=scan.step/2+60;
+  for(let _gE=0;_gE<_gB.sc.length;_gE++){const _gF=(_gB.b0+_gE)*_gB.df;if(Math.abs(_gF-_gC)>_gD)continue;
+    const _gG=scan.dial+cwSide()*(_gF-_gC),_gH=Math.floor((_gG-scan.lo)/scan.res);if(_gH>=0&&_gH<scan.acc.length&&_gB.sc[_gE]>scan.acc[_gH])scan.acc[_gH]=_gB.sc[_gE]}
 }
-async function scanStart(_gs){
+async function scanStart(_gI){
   if(scan.on){scanStop(true);return}
-  scan.purpose=_gs||"scan";
-  const _gt=curBand();if(!_gt){msg(T("Porta la radio in una banda radioamatoriale: scansione e monitoraggio lavorano nel suo segmento CW."),true);return false}
+  scan.purpose=_gI||"scan";
+  const _gJ=curBand();if(!_gJ){msg(T("Porta la radio in una banda radioamatoriale: scansione e monitoraggio lavorano nel suo segmento CW."),true);return false}
   if(mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”: scansione e monitoraggio usano l'audio USB."),true);return false}
-  scan.on=true;scan.lo=_gt[1];scan.hi=_gt[2];scan.restoreF=rig.freq;scan.restoreFil=rig.fil;
+  scan.on=true;scan.lo=_gJ[1];scan.hi=_gJ[2];scan.restoreF=rig.freq;scan.restoreFil=rig.fil;
   scan.step=rig.proto==="civ"?1000:400;
   if(rig.proto==="civ")cat.filter(1);
-  scan.steps=[];for(let _gu=scan.lo+scan.step/2;_gu<=scan.hi;_gu+=scan.step)scan.steps.push(Math.round(_gu));
+  scan.steps=[];for(let _gK=scan.lo+scan.step/2;_gK<=scan.hi;_gK+=scan.step)scan.steps.push(Math.round(_gK));
   scan.acc=new Float32Array(Math.ceil((scan.hi-scan.lo)/scan.res));scan.i=0;
   if(dec)dec.mute=true;
   if(scan.purpose==="scan"){$("scanBtn").textContent=T("■ Ferma scansione");$("huntBtn").disabled=true}else $("scanBtn").disabled=true;
@@ -2276,17 +2292,17 @@ function scanNext(){
   $("scanInfo").textContent=T("scansione {0}% · {1} kHz",Math.round(scan.i/scan.steps.length*100),(scan.dial/1000).toFixed(1));
   scan.timer=setTimeout(()=>{WF.avg=null;scan.timer=setTimeout(()=>{scan.collecting=true;scan.timer=setTimeout(()=>{scan.collecting=false;scan.i++;drawMap();scanNext()},600)},150)},250);
 }
-function scanStop(_gv){
-  clearTimeout(scan.timer);const _gw=scan.on,_gx=scan.purpose;scan.on=false;scan.collecting=false;
-  if(_gw){if(scan.restoreFil&&rig.proto==="civ")cat.filter(scan.restoreFil);if(_gx==="scan")cat.setFreq(scan.restoreF)}
+function scanStop(_gL){
+  clearTimeout(scan.timer);const _gM=scan.on,_gN=scan.purpose;scan.on=false;scan.collecting=false;
+  if(_gM){if(scan.restoreFil&&rig.proto==="civ")cat.filter(scan.restoreFil);if(_gN==="scan")cat.setFreq(scan.restoreF)}
   if(dec){dec.mute=false;dec.unlock()}
   $("scanBtn").textContent=T("⌁ Scansiona banda CW");$("scanBtn").disabled=!rig.port||hunt.on;$("huntBtn").disabled=!rig.port;
-  if(_gw&&scan.acc){scan.rows.unshift(scan.acc);if(scan.rows.length>6)scan.rows.pop();drawMap();listSignals()}
-  $("scanInfo").textContent=_gv?T("scansione interrotta"):T("scansione completata · clicca un segnale per sintonizzarlo");
+  if(_gM&&scan.acc){scan.rows.unshift(scan.acc);if(scan.rows.length>6)scan.rows.pop();drawMap();listSignals()}
+  $("scanInfo").textContent=_gL?T("scansione interrotta"):T("scansione completata · clicca un segnale per sintonizzarlo");
 }
 const hunt={cand:new Map(),on:false,visited:new Map(),target:null,phase:"",t0:0,lastAct:0,expect:0,heard:false,interest:false,tick:0,pickAt:0,emptySince:0,restoreFil:null,n:0};
 const HUNT={firstWait:6000,boring:20000,quiet:10000,maxDwell:300000,cool:180000,emptyStep:3000,minDb:11};
-const hKey=_gy=>Math.round(_gy/150);
+const hKey=_gO=>Math.round(_gO/150);
 function huntStart(){
   if(hunt.on){huntStop(T("Monitoraggio fermato."));return}
   if(!rig.port){msg(T("Collega il CAT per usare il monitoraggio."),true);return}
@@ -2299,79 +2315,79 @@ function huntStart(){
   msg(T("Monitoraggio avviato: vado sul segnale CW più forte del waterfall."));
 }
 function huntPeaks(){
-  const _gz=wfAnalyze();if(!_gz)return [];const _gA=curBand(),_gB=[],_gC=Date.now();
-  for(let _gD=1;_gD<_gz.sc.length-1;_gD++){const _gE=_gz.sc[_gD];if(_gE<_gz.sc[_gD-1]||_gE<_gz.sc[_gD+1])continue;const _gF=10*Math.log10(Math.max(1e-6,_gE));if(_gF<HUNT.minDb)continue;
-    const _gG=(_gz.b0+_gD)*_gz.df;if(_gG<280||_gG>1450)continue;const _gH=afToRf(_gG);
-    if(_gA&&(_gH<_gA[1]||_gH>_gA[2]))continue;
-    if(_gC-(hunt.visited.get(hKey(_gH))||0)<HUNT.cool)continue;
-    _gB.push({rf:_gH,af:_gG,db:_gF})}
-  _gB.sort((_gI,_gJ)=>_gJ.db-_gI.db);
-  const _gK=[];for(const _gL of _gB)if(!_gK.some(_gM=>Math.abs(_gM.rf-_gL.rf)<120))_gK.push(_gL);
-  return _gK;
+  const _gP=wfAnalyze();if(!_gP)return [];const _gQ=curBand(),_gR=[],_gS=Date.now();
+  for(let _gT=1;_gT<_gP.sc.length-1;_gT++){const _gU=_gP.sc[_gT];if(_gU<_gP.sc[_gT-1]||_gU<_gP.sc[_gT+1])continue;const _gV=10*Math.log10(Math.max(1e-6,_gU));if(_gV<HUNT.minDb)continue;
+    const _gW=(_gP.b0+_gT)*_gP.df;if(_gW<280||_gW>1450)continue;const _gX=afToRf(_gW);
+    if(_gQ&&(_gX<_gQ[1]||_gX>_gQ[2]))continue;
+    if(_gS-(hunt.visited.get(hKey(_gX))||0)<HUNT.cool)continue;
+    _gR.push({rf:_gX,af:_gW,db:_gV})}
+  _gR.sort((_gY,_gZ)=>_gZ.db-_gY.db);
+  const _ha=[];for(const _hb of _gR)if(!_ha.some(_hc=>Math.abs(_hc.rf-_hb.rf)<120))_ha.push(_hb);
+  return _ha;
 }
 function huntPick(){
-  const _gN=Date.now(),_gO=curBand();if(!_gO){huntStop(T("Monitoraggio fermato: la radio è fuori dalle bande radioamatoriali."));return}
-  const _gP=huntPeaks(),_gQ=new Map();
-  for(const _gR of _gP){const _gS=hKey(_gR.rf),_gT=hunt.cand.get(_gS)||hunt.cand.get(_gS-1)||hunt.cand.get(_gS+1);_gQ.set(_gS,{..._gR,n:(_gT?_gT.n:0)+1})}
-  hunt.cand=_gQ;
-  const _gU=[..._gQ.values()].filter(_gV=>_gV.n>=3).sort((_gW,_gX)=>_gX.db-_gW.db);
-  if(_gU.length){const _gY=_gU[0];hunt.cand=new Map();hunt.target=_gY;hunt.visited.set(hKey(_gY.rf),_gN);hunt.n++;hunt.emptySince=0;
-    const _gZ=Math.round(_gY.rf/10)*10;hunt.expect=_gZ;hunt.setAt=_gN;hunt.off=0;cat.setFreq(_gZ);
-    hunt.phase="dwell";hunt.t0=_gN;hunt.lastAct=_gN;hunt.heard=false;hunt.interest=false;return}
-  if(!hunt.emptySince)hunt.emptySince=_gN;
+  const _hd=Date.now(),_he=curBand();if(!_he){huntStop(T("Monitoraggio fermato: la radio è fuori dalle bande radioamatoriali."));return}
+  const _hf=huntPeaks(),_hg=new Map();
+  for(const _hh of _hf){const _hi=hKey(_hh.rf),_hj=hunt.cand.get(_hi)||hunt.cand.get(_hi-1)||hunt.cand.get(_hi+1);_hg.set(_hi,{..._hh,n:(_hj?_hj.n:0)+1})}
+  hunt.cand=_hg;
+  const _hk=[..._hg.values()].filter(_hl=>_hl.n>=3).sort((_hm,_hn)=>_hn.db-_hm.db);
+  if(_hk.length){const _ho=_hk[0];hunt.cand=new Map();hunt.target=_ho;hunt.visited.set(hKey(_ho.rf),_hd);hunt.n++;hunt.emptySince=0;
+    const _hp=Math.round(_ho.rf/10)*10;hunt.expect=_hp;hunt.setAt=_hd;hunt.off=0;cat.setFreq(_hp);
+    hunt.phase="dwell";hunt.t0=_hd;hunt.lastAct=_hd;hunt.heard=false;hunt.interest=false;return}
+  if(!hunt.emptySince)hunt.emptySince=_hd;
   $("scanInfo").textContent=T("monitoraggio: nessun segnale nuovo nel waterfall, cerco…");
-  if(_gN-hunt.emptySince>HUNT.emptyStep){hunt.cand=new Map();let _ha=(rig.freq||_gO[1])+1000;if(_ha>_gO[2]-300)_ha=_gO[1]+500;_ha=Math.round(_ha/10)*10;hunt.expect=_ha;hunt.setAt=_gN;hunt.off=0;cat.setFreq(_ha);WF.avg=null;hunt.emptySince=_gN}
-  hunt.pickAt=_gN+500;
+  if(_hd-hunt.emptySince>HUNT.emptyStep){hunt.cand=new Map();let _hq=(rig.freq||_he[1])+1000;if(_hq>_he[2]-300)_hq=_he[1]+500;_hq=Math.round(_hq/10)*10;hunt.expect=_hq;hunt.setAt=_hd;hunt.off=0;cat.setFreq(_hq);WF.avg=null;hunt.emptySince=_hd}
+  hunt.pickAt=_hd+500;
 }
 function huntInteresting(){
-  const _hb=rig.pitch||dec.freq;
-  return MSG.list.some(_hc=>_hc.t>=hunt.t0-1500&&Math.abs(_hc.f-_hb)<80&&(_hc.from||/^(CQ|QSO|Rapporto|Saluti)/.test(_hc.type||"")||(_hc.text||"").split(" ").some(isCall)))}
-function huntTick(_hd){
-  if(!hunt.on||!dec)return;if(_hd-hunt.tick<500)return;hunt.tick=_hd;const _he=Date.now();
-  if(hunt.expect&&rig.freq&&Math.abs(rig.freq-hunt.expect)>150&&_he-(hunt.setAt||0)>3000){if(++hunt.off>=3){huntStop(T("Monitoraggio fermato: la frequenza è stata cambiata a mano."));return}}else hunt.off=0;
-  if(hunt.phase==="pick"){if(_he>=hunt.pickAt)huntPick();return}
-  const _hf=rig.pitch||dec.freq,_hg=_hh=>_hh.key||(_hh.hops-_hh.lastMarkHop)*_hh.msHop<1200;
-  if(_hg(dec)||SK.list.some(_hi=>Math.abs(_hi.f-_hf)<70&&_hg(_hi.d))){hunt.lastAct=_he;hunt.heard=true}
+  const _hr=rig.pitch||dec.freq;
+  return MSG.list.some(_hs=>_hs.t>=hunt.t0-1500&&Math.abs(_hs.f-_hr)<80&&(_hs.from||/^(CQ|QSO|Rapporto|Saluti)/.test(_hs.type||"")||(_hs.text||"").split(" ").some(isCall)))}
+function huntTick(_ht){
+  if(!hunt.on||!dec)return;if(_ht-hunt.tick<500)return;hunt.tick=_ht;const _hu=Date.now();
+  if(hunt.expect&&rig.freq&&Math.abs(rig.freq-hunt.expect)>150&&_hu-(hunt.setAt||0)>3000){if(++hunt.off>=3){huntStop(T("Monitoraggio fermato: la frequenza è stata cambiata a mano."));return}}else hunt.off=0;
+  if(hunt.phase==="pick"){if(_hu>=hunt.pickAt)huntPick();return}
+  const _hv=rig.pitch||dec.freq,_hw=_hx=>_hx.key||(_hx.hops-_hx.lastMarkHop)*_hx.msHop<1200;
+  if(_hw(dec)||SK.list.some(_hy=>Math.abs(_hy.f-_hv)<70&&_hw(_hy.d))){hunt.lastAct=_hu;hunt.heard=true}
   if(!hunt.interest&&huntInteresting())hunt.interest=true;
-  const _hj=Math.round((_he-hunt.t0)/1000);
-  $("scanInfo").textContent=T("monitoraggio: {0} kHz ({1} dB) · {2} s · {3}",(hunt.expect/1000).toFixed(2),Math.round(hunt.target.db),_hj,hunt.interest?T("QSO o nominativi: resto"):hunt.heard?T("decodifico…"):T("attendo segnali"));
-  const _hk=(!hunt.heard&&_he-hunt.t0>HUNT.firstWait)||(!hunt.interest&&_he-hunt.t0>HUNT.boring)||(hunt.heard&&_he-hunt.lastAct>HUNT.quiet)||_he-hunt.t0>HUNT.maxDwell;
-  if(_hk){hunt.phase="pick";hunt.pickAt=_he+1200;WF.avg=null}
+  const _hz=Math.round((_hu-hunt.t0)/1000);
+  $("scanInfo").textContent=T("monitoraggio: {0} kHz ({1} dB) · {2} s · {3}",(hunt.expect/1000).toFixed(2),Math.round(hunt.target.db),_hz,hunt.interest?T("QSO o nominativi: resto"):hunt.heard?T("decodifico…"):T("attendo segnali"));
+  const _hA=(!hunt.heard&&_hu-hunt.t0>HUNT.firstWait)||(!hunt.interest&&_hu-hunt.t0>HUNT.boring)||(hunt.heard&&_hu-hunt.lastAct>HUNT.quiet)||_hu-hunt.t0>HUNT.maxDwell;
+  if(_hA){hunt.phase="pick";hunt.pickAt=_hu+1200;WF.avg=null}
 }
-function huntStop(_hl){
-  const _hm=hunt.on;hunt.on=false;hunt.phase="";hunt.target=null;
-  if(_hm&&hunt.restoreFil&&rig.proto==="civ")cat.filter(hunt.restoreFil);
+function huntStop(_hB){
+  const _hC=hunt.on;hunt.on=false;hunt.phase="";hunt.target=null;
+  if(_hC&&hunt.restoreFil&&rig.proto==="civ")cat.filter(hunt.restoreFil);
   $("huntBtn").setAttribute("aria-pressed","false");$("huntBtn").textContent=T("◎ Monitoraggio");$("scanBtn").disabled=!rig.port;$("huntBtn").disabled=!rig.port;
-  if(_hm){$("scanInfo").textContent=T("monitoraggio fermo");if(_hl)msg(_hl)}
+  if(_hC){$("scanInfo").textContent=T("monitoraggio fermo");if(_hB)msg(_hB)}
 }
 function drawMap(){
-  const _hn=$("bmap");if(!_hn.clientWidth||!scan.acc)return;const [_ho,_hp]=fit(_hn),_hq=_hn.getContext("2d");
-  _hq.fillStyle=WFPAL.bg;_hq.fillRect(0,0,_ho,_hp);
-  const _hr=scan.on?[scan.acc,...scan.rows]:scan.rows,_hs=Math.max(6,Math.floor(_hp/Math.max(4,_hr.length)));
-  _hr.forEach((_ht,_hu)=>{const _hv=_hu*_hs;for(let _hw=0;_hw<_ho;_hw++){const _hx=Math.floor(_hw/_ho*_ht.length);let _hy=0;for(let _hz=_hx;_hz<=Math.min(_ht.length-1,_hx+1);_hz++)_hy=Math.max(_hy,_ht[_hz]);
-    const _hA=10*Math.log10(Math.max(1e-6,_hy));if(_hA<6)continue;const _hB=wfColor(Math.min(1,(_hA-6)/14));_hq.fillStyle="rgb("+_hB+")";_hq.fillRect(_hw,_hv,1,_hs-1)}});
-  if(scan.on){const _hC=(scan.dial-scan.lo)/(scan.hi-scan.lo)*_ho;_hq.fillStyle="rgba(255,255,255,.6)";_hq.fillRect(_hC,0,2,_hs)}
-  const _hD=$("mapAxis");_hD.textContent="";const _hE=scan.hi-scan.lo,_hF=_hE>60000?10000:5000;
-  for(let _hG=Math.ceil(scan.lo/_hF)*_hF;_hG<=scan.hi;_hG+=_hF){const _hH=document.createElement("span");_hH.style.left=((_hG-scan.lo)/_hE*100)+"%";_hH.textContent=(_hG/1000).toFixed(0);_hD.appendChild(_hH)}
+  const _hD=$("bmap");if(!_hD.clientWidth||!scan.acc)return;const [_hE,_hF]=fit(_hD),_hG=_hD.getContext("2d");
+  _hG.fillStyle=WFPAL.bg;_hG.fillRect(0,0,_hE,_hF);
+  const _hH=scan.on?[scan.acc,...scan.rows]:scan.rows,_hI=Math.max(6,Math.floor(_hF/Math.max(4,_hH.length)));
+  _hH.forEach((_hJ,_hK)=>{const _hL=_hK*_hI;for(let _hM=0;_hM<_hE;_hM++){const _hN=Math.floor(_hM/_hE*_hJ.length);let _hO=0;for(let _hP=_hN;_hP<=Math.min(_hJ.length-1,_hN+1);_hP++)_hO=Math.max(_hO,_hJ[_hP]);
+    const _hQ=10*Math.log10(Math.max(1e-6,_hO));if(_hQ<6)continue;const _hR=wfColor(Math.min(1,(_hQ-6)/14));_hG.fillStyle="rgb("+_hR+")";_hG.fillRect(_hM,_hL,1,_hI-1)}});
+  if(scan.on){const _hS=(scan.dial-scan.lo)/(scan.hi-scan.lo)*_hE;_hG.fillStyle="rgba(255,255,255,.6)";_hG.fillRect(_hS,0,2,_hI)}
+  const _hT=$("mapAxis");_hT.textContent="";const _hU=scan.hi-scan.lo,_hV=_hU>60000?10000:5000;
+  for(let _hW=Math.ceil(scan.lo/_hV)*_hV;_hW<=scan.hi;_hW+=_hV){const _hX=document.createElement("span");_hX.style.left=((_hW-scan.lo)/_hU*100)+"%";_hX.textContent=(_hW/1000).toFixed(0);_hT.appendChild(_hX)}
 }
-function signalsOf(_hI){const _hJ=[];
-  for(let _hK=1;_hK<_hI.length-1;_hK++){const _hL=10*Math.log10(Math.max(1e-6,_hI[_hK]));if(_hL>=10&&_hI[_hK]>=_hI[_hK-1]&&_hI[_hK]>=_hI[_hK+1])_hJ.push([scan.lo+(_hK+0.5)*scan.res,_hL])}
-  const _hM=[];for(const _hN of _hJ){const _hO=_hM[_hM.length-1];if(_hO&&_hN[0]-_hO[0]<150){if(_hN[1]>_hO[1]){_hO[0]=_hN[0];_hO[1]=_hN[1]}}else _hM.push(_hN.slice())}
-  return _hM}
-function strongest(){const _hP=scan.rows[0];if(!_hP)return null;const _hQ=signalsOf(_hP).sort((_hR,_hS)=>_hS[1]-_hR[1]);return _hQ[0]||null}
+function signalsOf(_hY){const _hZ=[];
+  for(let _ia=1;_ia<_hY.length-1;_ia++){const _ib=10*Math.log10(Math.max(1e-6,_hY[_ia]));if(_ib>=10&&_hY[_ia]>=_hY[_ia-1]&&_hY[_ia]>=_hY[_ia+1])_hZ.push([scan.lo+(_ia+0.5)*scan.res,_ib])}
+  const _ic=[];for(const _id of _hZ){const _ie=_ic[_ic.length-1];if(_ie&&_id[0]-_ie[0]<150){if(_id[1]>_ie[1]){_ie[0]=_id[0];_ie[1]=_id[1]}}else _ic.push(_id.slice())}
+  return _ic}
+function strongest(){const _if=scan.rows[0];if(!_if)return null;const _ig=signalsOf(_if).sort((_ih,_ii)=>_ii[1]-_ih[1]);return _ig[0]||null}
 function listSignals(){
-  const _hT=$("sigList");_hT.textContent="";const _hU=scan.rows[0];if(!_hU)return;const _hV=[];
-  for(let _hW=1;_hW<_hU.length-1;_hW++){const _hX=10*Math.log10(Math.max(1e-6,_hU[_hW]));if(_hX>=10&&_hU[_hW]>=_hU[_hW-1]&&_hU[_hW]>=_hU[_hW+1])_hV.push([scan.lo+(_hW+0.5)*scan.res,_hX])}
-  const _hY=[];for(const _hZ of _hV){const _ia=_hY[_hY.length-1];if(_ia&&_hZ[0]-_ia[0]<150){if(_hZ[1]>_ia[1]){_ia[0]=_hZ[0];_ia[1]=_hZ[1]}}else _hY.push(_hZ.slice())}
-  _hY.sort((_ib,_ic)=>_ic[1]-_ib[1]);const _id=_hY.slice(0,16).sort((_ie,_if)=>_ie[0]-_if[0]);
-  if(!_id.length){_hT.textContent=T("Nessuna stazione CW sopra il rumore in questa scansione.");return}
-  for(const [_ig,_ih] of _id){const _ii=document.createElement("button");_ii.type="button";const _ij=document.createElement("b");_ij.textContent=(_ig/1000).toFixed(2);
-    _ii.append(_ij," · "+Math.round(_ih)+" dB");
-    _ii.onclick=()=>{if(hunt.on)huntStop(T("Monitoraggio fermato: hai scelto una stazione."));cat.setFreq(Math.round(_ig/10)*10)};_hT.appendChild(_ii)}
+  const _ij=$("sigList");_ij.textContent="";const _ik=scan.rows[0];if(!_ik)return;const _il=[];
+  for(let _im=1;_im<_ik.length-1;_im++){const _in=10*Math.log10(Math.max(1e-6,_ik[_im]));if(_in>=10&&_ik[_im]>=_ik[_im-1]&&_ik[_im]>=_ik[_im+1])_il.push([scan.lo+(_im+0.5)*scan.res,_in])}
+  const _io=[];for(const _ip of _il){const _iq=_io[_io.length-1];if(_iq&&_ip[0]-_iq[0]<150){if(_ip[1]>_iq[1]){_iq[0]=_ip[0];_iq[1]=_ip[1]}}else _io.push(_ip.slice())}
+  _io.sort((_ir,_is)=>_is[1]-_ir[1]);const _it=_io.slice(0,16).sort((_iu,_iv)=>_iu[0]-_iv[0]);
+  if(!_it.length){_ij.textContent=T("Nessuna stazione CW sopra il rumore in questa scansione.");return}
+  for(const [_iw,_ix] of _it){const _iy=document.createElement("button");_iy.type="button";const _iz=document.createElement("b");_iz.textContent=(_iw/1000).toFixed(2);
+    _iy.append(_iz," · "+Math.round(_ix)+" dB");
+    _iy.onclick=()=>{if(hunt.on)huntStop(T("Monitoraggio fermato: hai scelto una stazione."));cat.setFreq(Math.round(_iw/10)*10)};_ij.appendChild(_iy)}
 }
 $("scanBtn").onclick=()=>scanStart("scan");$("huntBtn").onclick=huntStart;
-$("bmap").addEventListener("click",_ik=>{if(!scan.rows.length||!rig.port)return;const _il=_ik.currentTarget.getBoundingClientRect(),_im=scan.lo+(_ik.clientX-_il.left)/_il.width*(scan.hi-scan.lo);
-  const _in=scan.rows[0];let _io=_im,_ip=0;for(let _iq=0;_iq<_in.length;_iq++){const _ir=scan.lo+(_iq+0.5)*scan.res;if(Math.abs(_ir-_im)<=300&&_in[_iq]>_ip){_ip=_in[_iq];_io=_ir}}cat.setFreq(Math.round(_io/10)*10)});
+$("bmap").addEventListener("click",_iA=>{if(!scan.rows.length||!rig.port)return;const _iB=_iA.currentTarget.getBoundingClientRect(),_iC=scan.lo+(_iA.clientX-_iB.left)/_iB.width*(scan.hi-scan.lo);
+  const _iD=scan.rows[0];let _iE=_iC,_iF=0;for(let _iG=0;_iG<_iD.length;_iG++){const _iH=scan.lo+(_iG+0.5)*scan.res;if(Math.abs(_iH-_iC)<=300&&_iD[_iG]>_iF){_iF=_iD[_iG];_iE=_iH}}cat.setFreq(Math.round(_iE/10)*10)});
 </script>
 <script>
 const SK={list:[],cand:new Map(),last:0,max:10};
@@ -2745,7 +2761,7 @@ GUIDE_ALL.it=[
  ["tune","Frequenza e monitoraggio",`
 <h3>Frequenza e monitoraggio</h3>
 <p>Con il CAT collegato cambi frequenza scrivendola nel campo (in kHz o in MHz) e premendo Invio, con i tasti ◀ ▶ e il passo, con la rotella del mouse sul display, o con i tasti banda.</p>
-<p>Nel <b>waterfall</b> le frequenze crescono da sinistra a destra e sulle tracce compaiono i nominativi decodificati e quelli degli spot. Un clic su una traccia sintonizza la radio lì.</p>
+<p>Nel <b>waterfall</b> le frequenze crescono da sinistra a destra e sulle tracce compaiono i nominativi decodificati e quelli degli spot. Un clic su una traccia sintonizza la radio lì. Un clic su un <b>nominativo</b> sintonizza quella stazione e, in modalità QSO, prepara il collegamento (nominativo, rapporto, scheda HamQTH) senza trasmettere: nei contest si passa da una stazione all'altra con un clic.</p>
 <p>Monitoraggio e inseguimento lavorano <b>solo nei segmenti CW del band plan IARU Regione 1</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351,5–5354,5 kHz</td></tr>
@@ -2918,7 +2934,7 @@ GUIDE_ALL.en=[
  ["tune","Frequency and monitoring",`
 <h3>Frequency and monitoring</h3>
 <p>With CAT connected you change frequency by typing it in the field (kHz or MHz) and pressing Enter, with the ◀ ▶ buttons and the step, with the mouse wheel on the display, or with the band buttons.</p>
-<p>In the <b>waterfall</b> frequencies grow from left to right, and decoded callsigns and spot callsigns appear on the traces. Clicking a trace tunes the radio there.</p>
+<p>In the <b>waterfall</b> frequencies grow from left to right, and decoded callsigns and spot callsigns appear on the traces. Clicking a trace tunes the radio there. Clicking a <b>callsign</b> tunes that station and, in QSO mode, sets up the contact (callsign, report, HamQTH card) without transmitting: in contests you move from one station to the next with a single click.</p>
 <p>Monitoring and chasing work <b>only in the CW segments of the IARU Region 1 band plan</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351.5–5354.5 kHz</td></tr>
@@ -3091,7 +3107,7 @@ GUIDE_ALL.fr=[
  ["tune","Fréquence et surveillance",`
 <h3>Fréquence et surveillance</h3>
 <p>Avec le CAT connecté, tu changes de fréquence en l'écrivant dans le champ (kHz ou MHz) puis Entrée, avec les boutons ◀ ▶ et le pas, avec la molette sur l'afficheur, ou avec les boutons de bande.</p>
-<p>Dans le <b>waterfall</b> les fréquences croissent de gauche à droite et les indicatifs décodés et ceux des spots apparaissent sur les traces. Un clic sur une trace accorde la radio à cet endroit.</p>
+<p>Dans le <b>waterfall</b> les fréquences croissent de gauche à droite et les indicatifs décodés et ceux des spots apparaissent sur les traces. Un clic sur une trace accorde la radio à cet endroit. Un clic sur un <b>indicatif</b> accorde cette station et, en mode QSO, prépare le contact (indicatif, report, fiche HamQTH) sans émettre : en contest on passe d'une station à l'autre d'un seul clic.</p>
 <p>La surveillance et le suivi travaillent <b>uniquement dans les segments CW du plan de bande IARU Région 1</b> :</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351,5–5354,5 kHz</td></tr>
@@ -3264,7 +3280,7 @@ GUIDE_ALL.de=[
  ["tune","Frequenz und Überwachung",`
 <h3>Frequenz und Überwachung</h3>
 <p>Mit verbundenem CAT änderst du die Frequenz durch Eingabe im Feld (kHz oder MHz) und Enter, mit den Tasten ◀ ▶ und der Schrittweite, mit dem Mausrad auf der Anzeige oder mit den Bandtasten.</p>
-<p>Im <b>Wasserfall</b> steigen die Frequenzen von links nach rechts, und auf den Spuren erscheinen die dekodierten Rufzeichen und die der Spots. Ein Klick auf eine Spur stimmt das Funkgerät dorthin ab.</p>
+<p>Im <b>Wasserfall</b> steigen die Frequenzen von links nach rechts, und auf den Spuren erscheinen die dekodierten Rufzeichen und die der Spots. Ein Klick auf eine Spur stimmt das Funkgerät dorthin ab. Ein Klick auf ein <b>Rufzeichen</b> stimmt diese Station ab und bereitet im QSO-Modus die Verbindung vor (Rufzeichen, Rapport, HamQTH-Karte), ohne zu senden: im Contest wechselt man mit einem Klick zur nächsten Station.</p>
 <p>Überwachung und Verfolgung arbeiten <b>nur in den CW-Segmenten des IARU-Region-1-Bandplans</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351,5–5354,5 kHz</td></tr>
@@ -3437,7 +3453,7 @@ GUIDE_ALL.es=[
  ["tune","Frecuencia y vigilancia",`
 <h3>Frecuencia y vigilancia</h3>
 <p>Con el CAT conectado cambias de frecuencia escribiéndola en el campo (kHz o MHz) y pulsando Intro, con los botones ◀ ▶ y el paso, con la rueda del ratón sobre el display, o con los botones de banda.</p>
-<p>En la <b>cascada</b> las frecuencias crecen de izquierda a derecha y sobre las trazas aparecen los indicativos decodificados y los de los spots. Un clic en una traza sintoniza la radio ahí.</p>
+<p>En la <b>cascada</b> las frecuencias crecen de izquierda a derecha y sobre las trazas aparecen los indicativos decodificados y los de los spots. Un clic en una traza sintoniza la radio ahí. Un clic en un <b>indicativo</b> sintoniza esa estación y, en modo QSO, prepara el contacto (indicativo, reporte, ficha HamQTH) sin transmitir: en los concursos se pasa de una estación a otra con un clic.</p>
 <p>La vigilancia y la persecución trabajan <b>solo en los segmentos CW del plan de bandas IARU Región 1</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351,5–5354,5 kHz</td></tr>
@@ -3610,7 +3626,7 @@ GUIDE_ALL.pt=[
  ["tune","Frequência e vigilância",`
 <h3>Frequência e vigilância</h3>
 <p>Com o CAT ligado mudas de frequência escrevendo-a no campo (kHz ou MHz) e premindo Enter, com os botões ◀ ▶ e o passo, com a roda do rato sobre o display, ou com os botões de banda.</p>
-<p>Na <b>cascata</b> as frequências crescem da esquerda para a direita e sobre os traços aparecem os indicativos descodificados e os dos spots. Um clique num traço sintoniza o rádio aí.</p>
+<p>Na <b>cascata</b> as frequências crescem da esquerda para a direita e sobre os traços aparecem os indicativos descodificados e os dos spots. Um clique num traço sintoniza o rádio aí. Um clique num <b>indicativo</b> sintoniza essa estação e, no modo QSO, prepara o contacto (indicativo, relatório, ficha HamQTH) sem transmitir: nos concursos passa-se de uma estação para outra com um clique.</p>
 <p>A vigilância e o seguimento trabalham <b>só nos segmentos CW do plano de bandas IARU Região 1</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351,5–5354,5 kHz</td></tr>
@@ -3783,7 +3799,7 @@ GUIDE_ALL.ja=[
  ["tune","周波数と監視",`
 <h3>周波数と監視</h3>
 <p>CAT接続中は、欄に周波数（kHzまたはMHz）を入力してEnter、◀ ▶ボタンとステップ、表示部でのマウスホイール、またはバンドボタンで周波数を変えられます。</p>
-<p><b>ウォーターフォール</b>では周波数が左から右へ高くなり、トレース上に解読したコールサインとスポットのコールサインが表示されます。トレースをクリックすると無線機がそこに同調します。</p>
+<p><b>ウォーターフォール</b>では周波数が左から右へ高くなり、トレース上に解読したコールサインとスポットのコールサインが表示されます。トレースをクリックすると無線機がそこに同調します。<b>コールサイン</b>をクリックするとその局に同調し、QSOモードでは送信せずに交信の準備（コールサイン、レポート、HamQTHカード）をします。コンテストではワンクリックで次の局へ移れます。</p>
 <p>監視と追跡は<b>IARU第1地域バンドプランのCWセグメント内のみ</b>で動作します：</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351.5–5354.5 kHz</td></tr>
@@ -3956,7 +3972,7 @@ GUIDE_ALL.ru=[
  ["tune","Частота и мониторинг",`
 <h3>Частота и мониторинг</h3>
 <p>С подключённым CAT частоту меняют, вводя её в поле (кГц или МГц) и нажимая Enter, кнопками ◀ ▶ и шагом, колесом мыши на индикаторе или кнопками диапазонов.</p>
-<p>На <b>водопаде</b> частоты растут слева направо, а декодированные позывные и позывные из спотов появляются на следах. Щелчок по следу настраивает туда радиостанцию.</p>
+<p>На <b>водопаде</b> частоты растут слева направо, а декодированные позывные и позывные из спотов появляются на следах. Щелчок по следу настраивает туда радиостанцию. Щелчок по <b>позывному</b> настраивает эту станцию и в режиме QSO готовит связь (позывной, рапорт, карточка HamQTH) без передачи: в контестах к следующей станции переходят одним щелчком.</p>
 <p>Мониторинг и погоня работают <b>только в CW-участках частотного плана IARU, район 1</b>:</p>
 <table><tbody>
 <tr><td>160 м</td><td>1810–1838 кГц</td></tr><tr><td>80 м</td><td>3500–3570 кГц</td></tr><tr><td>60 м</td><td>5351.5–5354.5 кГц</td></tr>
@@ -4129,7 +4145,7 @@ GUIDE_ALL.ar=[
  ["tune","التردد والمراقبة",`
 <h3>التردد والمراقبة</h3>
 <p>مع توصيل CAT تغيّر التردد بكتابته في الحقل (كيلوهرتز أو ميغاهرتز) والضغط على Enter، أو بزرّي ◀ ▶ والخطوة، أو بعجلة الفأرة على الشاشة، أو بأزرار النطاقات.</p>
-<p>في <b>الشلال</b> تزداد الترددات من اليسار إلى اليمين، وتظهر النداءات المفكوكة ونداءات الـspots على الآثار. النقر على أثر ينقل الراديو إليه.</p>
+<p>في <b>الشلال</b> تزداد الترددات من اليسار إلى اليمين، وتظهر النداءات المفكوكة ونداءات الـspots على الآثار. النقر على أثر ينقل الراديو إليه. النقر على <b>نداء</b> يضبط الراديو على تلك المحطة، وفي وضع QSO يجهّز الاتصال (النداء والتقرير وبطاقة HamQTH) دون إرسال: في المسابقات تنتقل من محطة إلى أخرى بنقرة واحدة.</p>
 <p>تعمل المراقبة والتتبّع <b>فقط داخل أجزاء CW من خطة نطاقات IARU للإقليم 1</b>:</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351.5–5354.5 kHz</td></tr>
@@ -4302,7 +4318,7 @@ GUIDE_ALL.zh=[
  ["tune","频率和监视",`
 <h3>频率和监视</h3>
 <p>连接 CAT 后，可以通过以下方式改变频率：在输入框中输入频率（kHz 或 MHz）并按 Enter，使用 ◀ ▶ 按钮和步进，在显示上滚动鼠标滚轮，或使用波段按钮。</p>
-<p>在 <b>瀑布图</b> 中频率从左到右递增，解码出的呼号和 spot 呼号会显示在轨迹上。点击轨迹即可把电台调到那里。</p>
+<p>在 <b>瀑布图</b> 中频率从左到右递增，解码出的呼号和 spot 呼号会显示在轨迹上。点击轨迹即可把电台调到那里。点击<b>呼号</b>会调到该电台，在 QSO 模式下还会准备通联（呼号、信号报告、HamQTH 资料卡），但不会发射：比赛中一次点击即可换到下一个电台。</p>
 <p>监视和追踪 <b>只在 IARU 第一区频率规划的 CW 段内工作</b>：</p>
 <table><tbody>
 <tr><td>160 m</td><td>1810–1838 kHz</td></tr><tr><td>80 m</td><td>3500–3570 kHz</td></tr><tr><td>60 m</td><td>5351.5–5354.5 kHz</td></tr>
@@ -4489,7 +4505,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.22";
+const WEB_VERSION="1.12.23";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
