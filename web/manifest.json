@@ -1,9 +1,9 @@
 {
-  "web": "1.12.19",
+  "web": "1.12.20",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.19.html",
-  "size": 613396,
-  "sha256": "d6d277c685d5620239dc2bb394837f8d4ae3663ffe42327c6c5fbbb4668126f5",
-  "date": "2026-11-12 14:06 UTC",
-  "notes": "Finestra di benvenuto: annuncio di QTHome con link alla pagina"
+  "file": "cwiu1mvi-1.12.20.html",
+  "size": 748167,
+  "sha256": "d16daa601bfe2b4cd6cb9bc2c9a340b35f773c56a649a2d806fd70e0567ea40d",
+  "date": "2026-11-12 14:57 UTC",
+  "notes": "Tre lingue nuove: russo, arabo e cinese"
 }

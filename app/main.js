@@ -305,7 +305,7 @@ function setupPermissions(_bm) {
   _bm.setPermissionRequestHandler((_bD, _bE, _bF) => _bF(['media', 'clipboard-sanitized-write'].includes(_bE)));
   _bm.setDevicePermissionHandler((_bG) => _bG.deviceType === 'serial');
 }
-const LANGS = [['it', 'Italiano'], ['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['ja', '日本語']];
+const LANGS = [['it', 'Italiano'], ['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['ja', '日本語'], ['ru', 'Русский'], ['ar', 'العربية'], ['zh', '中文（简体）']];
 const MT = {
   it: {
     rescueInstall: 'Aggiorna ora', rescueMsg: 'È disponibile CWIU1MVI {0}, che corregge un problema di questa versione.',
@@ -411,6 +411,51 @@ const MT = {
     help: 'ヘルプ', welcome: 'ようこそ', guide: 'CWIU1MVI ガイド', cfg7100: 'IC-7100 の設定', cfg7300: 'IC-7300 の設定', trouble: 'よくある問題', github: 'GitHub の CWIU1MVI',
     noPortTitle: 'ポートが見つかりません', noPortMsg: 'シリアルポートが見つかりません。', noPortDetail: '無線機の電源が入り USB ケーブルで接続されているか、メーカーの USB ドライバ（Icom・Kenwood・Yaesu は通常 Silicon Labs CP210x）がインストールされているか確認してください。',
     portTitle: '無線機のポートを選択', portMsg: '無線機はどのポートを使いますか？', portDetail: 'Icom と Kenwood は通常「Silicon Labs CP210x」です。ポートが 2 つある Yaesu では「Enhanced」を選んでください。', lastUsed: '前回使用', cancel: 'キャンセル', serialPort: 'シリアルポート',
+  },
+  ru: {
+    rescueInstall: 'Обновить сейчас', rescueMsg: 'Доступна CWIU1MVI {0}, она исправляет проблему этой версии.',
+    chase: 'Гоняться за спотами кластера', p_cl: 'Кластер CW',
+    about: 'О программе CWIU1MVI', checkUpd: 'Проверить обновления…', prefs: 'Настройки…', services: 'Службы', hide: 'Скрыть CWIU1MVI', hideOthers: 'Скрыть остальные', showAll: 'Показать все', quitApp: 'Завершить CWIU1MVI',
+    file: 'Файл', openLog: 'Открыть папку журнала', exportAdif: 'Экспорт журнала ADIF…', closeWin: 'Закрыть окно', quit: 'Выход',
+    edit: 'Правка', undo: 'Отменить', redo: 'Повторить', cut: 'Вырезать', copy: 'Копировать', paste: 'Вставить', selectAll: 'Выделить всё', findCall: 'Найти позывной', clearMsgs: 'Очистить сообщения',
+    radio: 'Радиостанция', listen: 'Слушать радиостанцию', stopListen: 'Остановить приём', catOn: 'Подключить CAT…', catOff: 'Отключить CAT', setCw: 'Перевести радиостанцию в CW', scan: 'Сканировать CW-участок', hunt: 'Следить за самыми сильными сигналами', band: 'Диапазон', rec: 'Записать звук', recStop: 'Остановить запись',
+    view: 'Вид', vMsg: 'Сообщения', vSta: 'Станции', style: 'Стиль', language: 'Язык', lock: 'Закрепить панели', resetLayout: 'Исходное расположение панелей', zoomIn: 'Увеличить', zoomOut: 'Уменьшить', zoomReset: 'Реальный размер', fullscreen: 'Во весь экран',
+    st_campo: 'Полевой', st_notte: 'Ночной', st_valvole: 'Ламповый', st_chiaro: 'Светлый', st_fosfori: 'Люминофор', st_contrasto: 'Высокий контраст',
+    p_log: 'Журнал приёма', p_tune: 'Частота и водопад', p_rig: 'Радиостанция и CAT', p_c7100: 'Управление IC-7100',
+    window: 'Окно', minimize: 'Свернуть', zoom: 'Изменить масштаб', fill: 'Заполнить экран', front: 'Все окна на передний план',
+    help: 'Помощь', welcome: 'Добро пожаловать', guide: 'Справка CWIU1MVI', cfg7100: 'Настройка IC-7100', cfg7300: 'Настройка IC-7300', trouble: 'Решение проблем', github: 'CWIU1MVI на GitHub',
+    noPortTitle: 'Порт не найден', noPortMsg: 'Не найдено ни одного последовательного порта.', noPortDetail: 'Проверьте, что радиостанция включена и подключена USB-кабелем и что установлен USB-драйвер производителя (для Icom, Kenwood и Yaesu обычно Silicon Labs CP210x).',
+    portTitle: 'Выберите порт радиостанции', portMsg: 'Какой порт использует радиостанция?', portDetail: 'Icom и Kenwood обычно используют «Silicon Labs CP210x». На радиостанциях Yaesu с двумя портами выберите «Enhanced».', lastUsed: 'использовался в прошлый раз', cancel: 'Отмена', serialPort: 'Последовательный порт',
+  },
+  ar: {
+    rescueInstall: 'حدّث الآن', rescueMsg: 'CWIU1MVI {0} متاح ويصلح مشكلة في هذا الإصدار.',
+    chase: 'تتبّع spots الكلاستر', p_cl: 'كلاستر CW',
+    about: 'حول CWIU1MVI', checkUpd: 'البحث عن تحديثات…', prefs: 'الإعدادات…', services: 'الخدمات', hide: 'إخفاء CWIU1MVI', hideOthers: 'إخفاء الآخرين', showAll: 'إظهار الكل', quitApp: 'إنهاء CWIU1MVI',
+    file: 'ملف', openLog: 'فتح مجلد السجل', exportAdif: 'تصدير سجل ADIF…', closeWin: 'إغلاق النافذة', quit: 'خروج',
+    edit: 'تحرير', undo: 'تراجع', redo: 'إعادة', cut: 'قص', copy: 'نسخ', paste: 'لصق', selectAll: 'تحديد الكل', findCall: 'ابحث عن نداء', clearMsgs: 'امسح الرسائل',
+    radio: 'الراديو', listen: 'استمع إلى الراديو', stopListen: 'أوقف الاستماع', catOn: 'توصيل CAT…', catOff: 'افصل CAT', setCw: 'اضبط الراديو على CW', scan: 'مسح نطاق CW', hunt: 'راقب أقوى الإشارات', band: 'النطاق', rec: 'سجّل الصوت', recStop: 'أوقف التسجيل',
+    view: 'العرض', vMsg: 'الرسائل', vSta: 'المحطات', style: 'النمط', language: 'اللغة', lock: 'قفل اللوحات', resetLayout: 'الترتيب الافتراضي للوحات', zoomIn: 'تكبير', zoomOut: 'تصغير', zoomReset: 'الحجم الفعلي', fullscreen: 'ملء الشاشة',
+    st_campo: 'ميداني', st_notte: 'ليلي', st_valvole: 'صمامات', st_chiaro: 'فاتح', st_fosfori: 'فوسفور', st_contrasto: 'تباين عالٍ',
+    p_log: 'سجل الاستماع', p_tune: 'التردد والشلال', p_rig: 'الراديو وCAT', p_c7100: 'أدوات التحكم في IC-7100',
+    window: 'نافذة', minimize: 'تصغير إلى الحد الأدنى', zoom: 'تكبير/تصغير', fill: 'ملء الشاشة', front: 'إحضار الكل إلى الأمام',
+    help: 'مساعدة', welcome: 'مرحبًا', guide: 'دليل CWIU1MVI', cfg7100: 'إعداد IC-7100', cfg7300: 'إعداد IC-7300', trouble: 'حل المشكلات', github: 'CWIU1MVI على GitHub',
+    noPortTitle: 'لم يُعثر على منفذ', noPortMsg: 'لم أجد أي منفذ تسلسلي.', noPortDetail: 'تأكد أن الراديو مشغّل وموصول بكابل USB، وأن برنامج تشغيل USB من الشركة المصنّعة مثبّت (لأجهزة Icom وKenwood وYaesu عادةً Silicon Labs CP210x).',
+    portTitle: 'اختر منفذ الراديو', portMsg: 'أي منفذ يستخدم الراديو؟', portDetail: 'تستخدم Icom وKenwood عادةً «Silicon Labs CP210x». في أجهزة Yaesu ذات المنفذين اختر «Enhanced».', lastUsed: 'استُخدم آخر مرة', cancel: 'إلغاء', serialPort: 'منفذ تسلسلي',
+  },
+  zh: {
+    rescueInstall: '立即更新', rescueMsg: 'CWIU1MVI {0} 已发布，修复了此版本中的一个问题。',
+    chase: '追踪集群 spot', p_cl: 'CW 集群',
+    about: '关于 CWIU1MVI', checkUpd: '检查更新…', prefs: '设置…', services: '服务', hide: '隐藏 CWIU1MVI', hideOthers: '隐藏其他', showAll: '全部显示', quitApp: '退出 CWIU1MVI',
+    file: '文件', openLog: '打开日志文件夹', exportAdif: '导出 ADIF 日志…', closeWin: '关闭窗口', quit: '退出',
+    edit: '编辑', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制', paste: '粘贴', selectAll: '全选', findCall: '查找呼号', clearMsgs: '清空消息',
+    radio: '电台', listen: '收听电台', stopListen: '停止收听', catOn: '连接 CAT…', catOff: '断开 CAT', setCw: '电台切到 CW', scan: '扫描 CW 频段', hunt: '监视最强信号', band: '频段', rec: '录音', recStop: '停止录音',
+    view: '视图', vMsg: '消息', vSta: '电台列表', style: '样式', language: '语言', lock: '锁定面板', resetLayout: '默认面板布局', zoomIn: '放大', zoomOut: '缩小', zoomReset: '实际大小', fullscreen: '全屏',
+    st_campo: '野战', st_notte: '夜间', st_valvole: '电子管', st_chiaro: '浅色', st_fosfori: '荧光屏', st_contrasto: '高对比度',
+    p_log: '收听日志', p_tune: '频率和瀑布图', p_rig: '电台和 CAT', p_c7100: 'IC-7100 控制',
+    window: '窗口', minimize: '最小化', zoom: '缩放', fill: '填满屏幕', front: '全部置于顶层',
+    help: '帮助', welcome: '欢迎', guide: 'CWIU1MVI 指南', cfg7100: '设置 IC-7100', cfg7300: '设置 IC-7300', trouble: '故障排除', github: 'GitHub 上的 CWIU1MVI',
+    noPortTitle: '未找到端口', noPortMsg: '没有找到任何串口。', noPortDetail: '请检查电台是否已开机并用 USB 线连接，以及是否安装了厂家的 USB 驱动（Icom、Kenwood 和 Yaesu 通常是 Silicon Labs CP210x）。',
+    portTitle: '选择电台端口', portMsg: '电台使用哪个端口？', portDetail: 'Icom 和 Kenwood 通常使用“Silicon Labs CP210x”。有两个端口的 Yaesu 电台请选择“Enhanced”。', lastUsed: '上次使用', cancel: '取消', serialPort: '串口',
   },
 };
 const langFile = () => path.join(app.getPath('userData'), 'lang.json');

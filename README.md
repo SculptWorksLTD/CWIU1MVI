@@ -9,7 +9,7 @@ Decoder CW per Mac, Windows e Linux, sviluppato da **IU1MVI**. Uso libero e grat
 - **Cluster e inseguimento**: spot RBN/DX cluster, salto automatico da una stazione all'altra.
 - **QSO**: frasi pronte e testo libero con il keyer della radio, log ADIF (nuovo, apri, salva), scheda HamQTH del corrispondente.
 - **Propagazione**: indici solari e bande aperte in tempo reale.
-- Pannelli personalizzabili, 7 lingue, aggiornamenti automatici.
+- Pannelli personalizzabili, 10 lingue (anche russo, arabo e cinese), aggiornamenti automatici.
 
 **Installazione:** scarica `Mac.pkg`, `Setup.exe` o il pacchetto Linux (`.deb` / `.AppImage`) da [Releases](https://github.com/SculptWorksLTD/CWIU1MVI/releases/latest). La guida è nel menu Aiuto.
 
