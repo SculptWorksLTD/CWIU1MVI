@@ -152,6 +152,16 @@ async function install(_aA, _aB) {
 function L($m) { Add-Content -LiteralPath $log -Value ((Get-Date -Format s) + ' ' + $m) }
 $dir = ${_aE(path.dirname(app.getPath('exe')))}
 $t = 0; while ((Get-Process -Id ${_aD} -ErrorAction SilentlyContinue) -and $t -lt 600) { Start-Sleep -Milliseconds 200; $t++ }
+function Start-App($exe) {
+  for ($i = 0; $i -lt 3; $i++) {
+    Start-Sleep -Seconds 3
+    if (Mine) { L 'app ripartita'; return }
+    if ($i -eq 0) { L 'app non ripartita: la avvio'; Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) }
+    else { L 'app ancora ferma: la avvio tramite explorer'; Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $exe + '"') }
+  }
+  Start-Sleep -Seconds 3
+  if (Mine) { L 'app ripartita' } else { L 'app NON ripartita' }
+}
 function Mine { Get-Process -Name 'CWIU1MVI' -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($dir, [System.StringComparison]::OrdinalIgnoreCase) } }
 $t = 0; while ((Mine) -and $t -lt 150) { Start-Sleep -Milliseconds 200; $t++ }
 Mine | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -167,10 +177,9 @@ L 'app chiusa, inizio sostituzione'
     const _aL = path.join(_aC, 'CWIU1MVI-Setup.exe');
     await download(_aA.url, _aA.size, _aL, _aB);
     markAttempt(_aA);
-    await _aH('setup.ps1', `$p = Start-Process -FilePath ${_aE(_aL)} -ArgumentList '/S','/currentuser' -Wait -PassThru
+    await _aH('setup.ps1', `$p = Start-Process -FilePath ${_aE(_aL)} -ArgumentList '/S','/currentuser','--force-run' -Wait -PassThru
 L ('installer terminato, codice ' + $p.ExitCode)
-Start-Sleep -Seconds 1
-Start-Process -FilePath ${_aE(app.getPath('exe'))}
+Start-App ${_aE(app.getPath('exe'))}
 Remove-Item -LiteralPath ${_aE(_aC)} -Recurse -Force -ErrorAction SilentlyContinue
 `);
     setTimeout(() => app.quit(), 300);
@@ -203,6 +212,7 @@ rm -rf ${JSON.stringify(_aC)}
     await _aH('swap.ps1', `robocopy ${_aE(_aO)} ${_aE(_aP)} /E /IS /IT /R:10 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 L ('copia terminata, codice robocopy ' + $LASTEXITCODE)
 Start-Process -FilePath ${_aE(path.join(_aP, path.basename(app.getPath('exe'))))}
+Start-App ${_aE(path.join(_aP, path.basename(app.getPath('exe'))))}
 Remove-Item -LiteralPath ${_aE(_aC)} -Recurse -Force -ErrorAction SilentlyContinue
 `);
   }
