@@ -7,6 +7,9 @@ CWIU1MVI: decoder CW per Mac, Windows e Linux. Sviluppato da IU1MVI, uso libero 
 
 Chi ha già CWIU1MVI su Mac o Windows non deve fare niente: si aggiorna da solo all'avvio. Su Linux decoder e interfaccia si aggiornano da soli; per una nuova versione completa si scarica di nuovo il pacchetto da qui.
 
+**1.2.14**
+- Windows: l'aggiornamento automatico completo ora funziona davvero (prima lo script di installazione si chiudeva insieme all'app e l'aggiornamento non avveniva). Chi ha una versione precedente su Windows deve installare questa una volta a mano con `Setup.exe`; dalle versioni successive si aggiorna e si riapre da solo.
+
 **1.2.13**
 - Windows: dopo un aggiornamento completo CWIU1MVI si riapre da solo (prima restava chiuso). Vale dagli aggiornamenti successivi a questo: per questa volta va riaperto a mano.
 

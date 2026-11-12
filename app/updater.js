@@ -150,6 +150,7 @@ async function install(_aA, _aB) {
   const _aE = (_aF) => "'" + String(_aF).replace(/'/g, "''") + "'";
   const _aG = () => `$log = ${_aE(logFile())}
 function L($m) { Add-Content -LiteralPath $log -Value ((Get-Date -Format s) + ' ' + $m) }
+L 'script di aggiornamento avviato'
 $dir = ${_aE(path.dirname(app.getPath('exe')))}
 $t = 0; while ((Get-Process -Id ${_aD} -ErrorAction SilentlyContinue) -and $t -lt 600) { Start-Sleep -Milliseconds 200; $t++ }
 function Start-App($exe) {
@@ -171,48 +172,55 @@ L 'app chiusa, inizio sostituzione'
   const _aH = async (_aI, _aJ) => {
     const _aK = path.join(_aC, _aI);
     await fs.promises.writeFile(_aK, '\ufeff' + _aG() + _aJ, 'utf8');
-    spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', _aK], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+    const _aL = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "${_aK}"`;
+    const _aM = await new Promise((_aN) => {
+      execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+        `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = ${_aE(_aL)} }; exit [int]$r.ReturnValue`],
+      { windowsHide: true, timeout: 20000 }, (_aO) => _aN(!_aO));
+    });
+    logLine('script di aggiornamento lanciato ' + (_aM ? 'tramite WMI' : 'direttamente (WMI non disponibile)'));
+    if (!_aM) spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', _aK], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
   };
   if (isWin && _aA.setup) {
-    const _aL = path.join(_aC, 'CWIU1MVI-Setup.exe');
-    await download(_aA.url, _aA.size, _aL, _aB);
+    const _aP = path.join(_aC, 'CWIU1MVI-Setup.exe');
+    await download(_aA.url, _aA.size, _aP, _aB);
     markAttempt(_aA);
-    await _aH('setup.ps1', `$p = Start-Process -FilePath ${_aE(_aL)} -ArgumentList '/S','/currentuser','--force-run' -Wait -PassThru
+    await _aH('setup.ps1', `$p = Start-Process -FilePath ${_aE(_aP)} -ArgumentList '/S','/currentuser','--force-run' -Wait -PassThru
 L ('installer terminato, codice ' + $p.ExitCode)
 Start-App ${_aE(app.getPath('exe'))}
 Remove-Item -LiteralPath ${_aE(_aC)} -Recurse -Force -ErrorAction SilentlyContinue
 `);
-    setTimeout(() => app.quit(), 300);
+    setTimeout(() => app.quit(), 1000);
     return;
   }
-  const _aM = path.join(_aC, 'update.zip');
-  await download(_aA.url, _aA.size, _aM, _aB);
-  const _aN = path.join(_aC, 'x');
-  await fs.promises.mkdir(_aN);
-  if (isMac) await run('/usr/bin/ditto', ['-x', '-k', _aM, _aN]);
-  else await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `Expand-Archive -LiteralPath '${_aM.replace(/'/g, "''")}' -DestinationPath '${_aN.replace(/'/g, "''")}' -Force`]);
-  const _aO = findNew(_aN);
-  if (!_aO) throw new Error('invalid archive');
-  const _aP = installTarget();
+  const _aQ = path.join(_aC, 'update.zip');
+  await download(_aA.url, _aA.size, _aQ, _aB);
+  const _aR = path.join(_aC, 'x');
+  await fs.promises.mkdir(_aR);
+  if (isMac) await run('/usr/bin/ditto', ['-x', '-k', _aQ, _aR]);
+  else await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `Expand-Archive -LiteralPath '${_aQ.replace(/'/g, "''")}' -DestinationPath '${_aR.replace(/'/g, "''")}' -Force`]);
+  const _aS = findNew(_aR);
+  if (!_aS) throw new Error('invalid archive');
+  const _aT = installTarget();
   markAttempt(_aA);
   if (isMac) {
-    const _aQ = path.join(_aC, 'swap.sh');
-    await fs.promises.writeFile(_aQ, `#!/bin/sh
+    const _aU = path.join(_aC, 'swap.sh');
+    await fs.promises.writeFile(_aU, `#!/bin/sh
 while kill -0 ${_aD} 2>/dev/null; do sleep 0.3; done
-OLD=${JSON.stringify(_aP)}
-NEW=${JSON.stringify(_aO)}
+OLD=${JSON.stringify(_aT)}
+NEW=${JSON.stringify(_aS)}
 mv "$OLD" "$OLD.old-update" && mv "$NEW" "$OLD" || { mv "$OLD.old-update" "$OLD" 2>/dev/null; open "$OLD"; exit 1; }
 rm -rf "$OLD.old-update"
 xattr -dr com.apple.quarantine "$OLD" 2>/dev/null
 open "$OLD"
 rm -rf ${JSON.stringify(_aC)}
 `);
-    spawn('/bin/sh', [_aQ], { detached: true, stdio: 'ignore' }).unref();
+    spawn('/bin/sh', [_aU], { detached: true, stdio: 'ignore' }).unref();
   } else {
-    await _aH('swap.ps1', `robocopy ${_aE(_aO)} ${_aE(_aP)} /E /IS /IT /R:10 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    await _aH('swap.ps1', `robocopy ${_aE(_aS)} ${_aE(_aT)} /E /IS /IT /R:10 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 L ('copia terminata, codice robocopy ' + $LASTEXITCODE)
-Start-Process -FilePath ${_aE(path.join(_aP, path.basename(app.getPath('exe'))))}
-Start-App ${_aE(path.join(_aP, path.basename(app.getPath('exe'))))}
+Start-Process -FilePath ${_aE(path.join(_aT, path.basename(app.getPath('exe'))))}
+Start-App ${_aE(path.join(_aT, path.basename(app.getPath('exe'))))}
 Remove-Item -LiteralPath ${_aE(_aC)} -Recurse -Force -ErrorAction SilentlyContinue
 `);
   }
