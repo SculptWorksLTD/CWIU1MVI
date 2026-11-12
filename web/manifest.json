@@ -1,9 +1,9 @@
 {
-  "web": "1.12.20",
+  "web": "1.12.21",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.20.html",
-  "size": 748167,
-  "sha256": "d16daa601bfe2b4cd6cb9bc2c9a340b35f773c56a649a2d806fd70e0567ea40d",
-  "date": "2026-11-12 14:57 UTC",
-  "notes": "Tre lingue nuove: russo, arabo e cinese"
+  "file": "cwiu1mvi-1.12.21.html",
+  "size": 748506,
+  "sha256": "5aace922ce6d7d475e1639b5ae096415ddfc0f6f416a4ba1f11ad53105b4a406",
+  "date": "2026-11-12 17:28 UTC",
+  "notes": "Registro: motivo quando l'inseguimento non riparte"
 }

@@ -2039,7 +2039,7 @@ if(RIGGER)setInterval(async()=>{const _aE=RIGGER_BACK;if(!_aE||rig.port||Date.no
   await catConnect();
   if(!rig.port||RIGGER_BACK!==_aE)return;
   RIGGER_BACK=null;msg(T("The Rigger è tornato: radio ricollegata su {0}.",_aE.name));
-  if(_aE.chase){RIGGER_CHASE=true;setTimeout(()=>{if(!RIGGER_CHASE)return;RIGGER_CHASE=false;try{if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aL){}},3000)}},3000);
+  if(_aE.chase){RIGGER_CHASE=true;setTimeout(()=>{if(!RIGGER_CHASE){evLog("ripresa inseguimento annullata","");return}RIGGER_CHASE=false;try{evLog("ripresa inseguimento",(chase.on?"già attivo":"")+(rig.port?"":" CAT scollegato")+(mode==="mic"?"":" ascolto spento"));if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aL){evLog("ripresa inseguimento: errore",String(_aL&&_aL.message||_aL))}},3000)}},3000);
 function catViaRigger(){const _aM=$("catVia")?$("catVia").value:"usb";return RIGGER&&_aM&&_aM!=="usb"?_aM.replace(/^tr:/,""):""}
 async function catViaFill(){const _aN=$("catVia");if(!_aN)return;let _aO=[];try{if(RIGGER)_aO=await RIGGER.list()}catch(_aP){}
   const _aQ=typeof RIGGER_BACK!=="undefined"&&RIGGER_BACK?RIGGER_BACK.name:"",_aR=_aQ&&!_aO.includes(_aQ)?_aQ:"";
@@ -4480,7 +4480,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.20";
+const WEB_VERSION="1.12.21";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4929,8 +4929,8 @@ const CHASE={empty:30000,afterGot:20000,firstWait:10000,bandWait:3500,boring:300
 function chaseStart(){
   if(chase.on){chaseStop(T("Inseguimento fermato."),"tasto o menu");return}
   if(!CLAPI){msg(T("Il cluster funziona nell'app per Mac e Windows."),true);return}
-  if(!rig.port){msg(T("Collega il CAT per inseguire gli spot."),true);return}
-  if(mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”."),true);return}
+  if(!rig.port){evLog("inseguimento non avviato","CAT scollegato");msg(T("Collega il CAT per inseguire gli spot."),true);return}
+  if(mode!=="mic"){evLog("inseguimento non avviato","ascolto spento");msg(T("Avvia prima “Ascolta la radio”."),true);return}
   if(CL.state==="closed")clConnect();
   if(hunt.on)huntStop();if(scan.on)scanStop(true);
   chase.on=true;chase.phase="pick";chase.pickAt=Date.now()+500;chase.n=0;chase.miss={};chase.mute={};
