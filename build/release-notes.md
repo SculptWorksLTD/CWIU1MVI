@@ -7,6 +7,9 @@ CWIU1MVI: decoder CW per Mac, Windows e Linux. Sviluppato da IU1MVI, uso libero 
 
 Chi ha già CWIU1MVI su Mac o Windows non deve fare niente: si aggiorna da solo all'avvio. Su Linux decoder e interfaccia si aggiornano da soli; per una nuova versione completa si scarica di nuovo il pacchetto da qui.
 
+**1.2.17**
+- Mac: l'app è firmata sempre con lo stesso certificato, così macOS ricorda il permesso del microfono. Dopo questo aggiornamento il Mac lo chiede un'ultima volta: rispondi "Consenti"; dai prossimi aggiornamenti non lo chiederà più.
+
 **1.2.16**
 - Registro eventi: l'app annota anche il proprio avvio, gli aggiornamenti e le aperture della porta di The Rigger, una riga "app viva" ogni 5 minuti e, se la parte interna resta ferma più di qualche secondo, per quanto tempo e cosa stava facendo.
 
