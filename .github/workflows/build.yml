@@ -16,6 +16,7 @@ on:
       - 'app/updater.js'
       - 'app/cluster.js'
       - 'app/hamqth.js'
+      - 'app/rigger-io.js'
       - 'package.json'
       - 'build/**'
       - '.github/workflows/**'

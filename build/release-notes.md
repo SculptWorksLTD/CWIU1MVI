@@ -7,6 +7,13 @@ CWIU1MVI: decoder CW per Mac, Windows e Linux. Sviluppato da IU1MVI, uso libero 
 
 Chi ha già CWIU1MVI su Mac o Windows non deve fare niente: si aggiorna da solo all'avvio. Su Linux decoder e interfaccia si aggiornano da soli; per una nuova versione completa si scarica di nuovo il pacchetto da qui.
 
+**1.2.12**
+- The Rigger: se The Rigger si chiude o si aggiorna mentre CWIU1MVI è collegato, l'app non si blocca più (prima poteva restare ferma su "cerco la radio" e smettere di scrivere i log); la porta si apre in un processo separato e CWIU1MVI si ricollega quando The Rigger torna.
+- Log: le intestazioni dei file non si ripetono più quando arrivano più righe insieme.
+
+**1.2.11**
+- Windows: CWIU1MVI vede le radio di The Rigger (porte CAT via rete) e le propone in Impostazioni › Collegamento.
+
 **1.2.10**
 - The Rigger: se chiude la porta (programma chiuso o riavviato) CWIU1MVI segna il CAT come scollegato e, appena la porta ricompare, ricollega la radio da solo e rimette ascolto e inseguimento com'erano.
 

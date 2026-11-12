@@ -2010,10 +2010,10 @@ async function catDisconnect(_al){
 }
 const RIGGER=window.cwiuRigger||null;let RIGGER_PORT=null;
 function riggerPort(_ar){let _as=null;const _at={rigger:_ar,readable:null,writable:null,
-  async open(){if(!(await RIGGER.open(_ar)))throw new Error("rigger");
+  async open(){if(!(await Promise.race([RIGGER.open(_ar),wait(6000).then(()=>false)])))throw new Error("rigger");
     _at.readable=new ReadableStream({start(_au){_as=_au},cancel(){_as=null}});
     _at.writable=new WritableStream({write(_av){return RIGGER.write(_av)}})},
-  async close(){try{_as&&_as.close()}catch(_aw){}_as=null;_at.readable=null;_at.writable=null;try{await RIGGER.close()}catch(_ax){}},
+  async close(){try{_as&&_as.close()}catch(_aw){}_as=null;_at.readable=null;_at.writable=null;try{await Promise.race([RIGGER.close(),wait(2000)])}catch(_ax){}},
   async setSignals(){},getInfo(){return {}},push(_ay){if(_as)try{_as.enqueue(_ay)}catch(_az){}}};
   RIGGER_PORT=_at;return _at}
 if(RIGGER)RIGGER.onData(_aA=>{if(RIGGER_PORT)RIGGER_PORT.push(new Uint8Array(_aA))});
@@ -3954,7 +3954,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.14";
+const WEB_VERSION="1.12.15";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};

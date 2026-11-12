@@ -1,9 +1,9 @@
 {
-  "web": "1.12.14",
+  "web": "1.12.15",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.14.html",
-  "size": 610371,
-  "sha256": "288c484f290da79b832185059f3558b32910cd1b467344c7530a0c517e507f81",
-  "date": "2026-11-11 22:30 UTC",
-  "notes": "The Rigger: l'attesa di ricollegamento continua anche dopo un aggiornamento leggero"
+  "file": "cwiu1mvi-1.12.15.html",
+  "size": 610441,
+  "sha256": "bcb1b07c292c0a42f4835696e5143d5bba4283a9ea5992156585ec2fc25c5364",
+  "date": "2026-11-12 06:25 UTC",
+  "notes": "The Rigger: niente più blocchi quando The Rigger si chiude o si aggiorna"
 }
