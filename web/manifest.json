@@ -1,9 +1,9 @@
 {
-  "web": "1.12.15",
+  "web": "1.12.16",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.15.html",
-  "size": 610441,
-  "sha256": "bcb1b07c292c0a42f4835696e5143d5bba4283a9ea5992156585ec2fc25c5364",
-  "date": "2026-11-12 06:25 UTC",
-  "notes": "The Rigger: niente più blocchi quando The Rigger si chiude o si aggiorna"
+  "file": "cwiu1mvi-1.12.16.html",
+  "size": 611387,
+  "sha256": "31d89d5a29e96712f1a2af3403cec07df980d703e2b0061c8db97a6e7841733a",
+  "date": "2026-11-12 08:52 UTC",
+  "notes": "The Rigger: con la radio spenta la scelta del collegamento resta visibile e si può passare alla porta USB"
 }
