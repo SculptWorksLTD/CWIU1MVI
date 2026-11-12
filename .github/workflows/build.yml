@@ -114,11 +114,30 @@ jobs:
             echo "::error title=electron-builder Mac::$(cat tail.txt)"
             exit 1
           fi
-      - name: Firma ad-hoc e archivio zip
+      - name: Firma e archivio zip
+        env:
+          MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
         run: |
           APP="$(ls -d dist/mac*/*.app | head -n 1)"
-          codesign --force --deep --sign - "$APP"
+          # Firma sempre con lo stesso certificato: macOS ricorda il permesso del microfono fra un aggiornamento e l'altro.
+          if [ -n "$MAC_CERT_P12" ]; then
+            KC="$RUNNER_TEMP/firma.keychain-db"
+            echo "$MAC_CERT_P12" | base64 --decode > "$RUNNER_TEMP/firma.p12"
+            security create-keychain -p kc "$KC"
+            security set-keychain-settings "$KC"
+            security unlock-keychain -p kc "$KC"
+            security import "$RUNNER_TEMP/firma.p12" -k "$KC" -P cwiu1mvi -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k kc "$KC" > /dev/null
+            security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+            rm -f "$RUNNER_TEMP/firma.p12"
+            ID=$(security find-certificate -c "CWIU1MVI IU1MVI" -Z "$KC" | awk '/SHA-1/{print $NF}')
+            codesign --force --deep --keychain "$KC" --sign "$ID" "$APP"
+          else
+            echo "::warning title=Firma::segreto MAC_CERT_P12 assente, firma ad-hoc"
+            codesign --force --deep --sign - "$APP"
+          fi
           codesign --verify --deep "$APP"
+          codesign -d -r- "$APP"
           VERSION=$(node -p "require('./package.json').version")
           ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/CWIU1MVI-${VERSION}-Mac.zip"
       - name: Installer .pkg
