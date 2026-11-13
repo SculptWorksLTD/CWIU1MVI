@@ -1,9 +1,9 @@
 {
-  "web": "1.12.25",
+  "web": "1.12.26",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.25.html",
-  "size": 776211,
-  "sha256": "44e169b347292c154c17a169aa7866b6bc5c66bb95e2e259c428a89d4ab09d8a",
-  "date": "2026-11-13 12:53 UTC",
-  "notes": "The Rigger con una radio Icom: il collegamento usa sempre CI-V (non più l'emulazione Kenwood TS-2000)"
+  "file": "cwiu1mvi-1.12.26.html",
+  "size": 776236,
+  "sha256": "a921b1943257e8b9f104cfc57e3a02ea39d4d5d2b71dcbe2d88a75bd1e923ead",
+  "date": "2026-11-13 13:02 UTC",
+  "notes": "Lo stato di scansione, monitoraggio e inseguimento ora è nell'intestazione del pannello: il waterfall non si sposta più"
 }

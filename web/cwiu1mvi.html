@@ -166,8 +166,7 @@ tr.cq td.callc{color:var(--led-green)}
 .scanrow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
 .tunebar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
 .tunebar .bands button{min-height:24px;padding:2px 7px}
-.scaninfo{flex:1 1 220px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.74rem}
-.scaninfo:empty{display:none}
+.mod-h .scaninfo{flex:1 1 0;min-width:0;color:var(--amber,#e8a33a)}
 .tunehint{display:none}
 .mod[data-mod="tune"] .mod-b{display:flex;flex-direction:column;gap:6px;overflow:auto}
 .mod[data-mod="tune"].sized .wfwrap:not(#mapWrap){flex:1 1 0;min-height:70px;display:flex;flex-direction:column}
@@ -437,7 +436,6 @@ table td{padding:2px 6px!important}
 .scanrow{flex-wrap:nowrap;overflow:hidden}
 .scanrow>button,.scanrow>select{flex:0 0 auto}
 #chaseBand{width:150px}
-.scaninfo{flex:1 1 0}
 .ro3 .lcd b{display:inline-block;min-width:2.2em;text-align:right}
 #state{display:inline-block;min-width:5.5em}
 .qctl{align-items:stretch}
@@ -779,7 +777,7 @@ header.bar{flex-wrap:nowrap}
   </section>
 
   <section class="mod" data-mod="tune" aria-label="Frequenza e waterfall CW">
-    <div class="mod-h" tabindex="0"><span class="grip" aria-hidden="true">⋮⋮</span><span class="mod-id">A2</span><h2>Frequenza · waterfall CW</h2><span class="sp"></span><span class="ro" id="wfInfo"></span><button type="button" class="ghost small mod-min" aria-expanded="true" title="Riduci o espandi">–</button></div>
+    <div class="mod-h" tabindex="0"><span class="grip" aria-hidden="true">⋮⋮</span><span class="mod-id">A2</span><h2>Frequenza · waterfall CW</h2><span id="scanInfo" class="ro scaninfo"></span><span class="ro" id="wfInfo"></span><button type="button" class="ghost small mod-min" aria-expanded="true" title="Riduci o espandi">–</button></div>
     <div class="mod-b">
       <div class="tunebar">
       <div class="tunerow">
@@ -797,7 +795,6 @@ header.bar{flex-wrap:nowrap}
         <button id="huntBtn" type="button" class="small" disabled aria-pressed="false" title="Cerca di continuo i segnali CW più forti, si ferma a decodificarli e poi passa al successivo">◎ Monitoraggio</button>
         <button id="chaseBtn" type="button" class="small" aria-pressed="false" title="Va sugli spot CW più freschi, decodifica e passa al successivo">◎ Insegui gli spot</button>
         <select id="chaseBand" aria-label="Banda dell'inseguimento" title="Su quale banda inseguire gli spot (valgono anche gli altri filtri del cluster)"></select>
-        <span id="scanInfo" class="hint scaninfo"></span>
       </div>
       </div>
       <div class="wfwrap">
@@ -4550,7 +4547,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.25";
+const WEB_VERSION="1.12.26";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -4874,6 +4871,7 @@ function utcTick(){const _fu=new Date();$("utcNow").textContent=pad2(_fu.getUTCH
   let _fv="";try{const _fw=typeof gridLL==="function"&&gridLL(prefs().grid);if(_fw){const _fx=sunTimes(_fw[0],_fw[1],_fu);if(_fx){const _fy=_fz=>pad2(Math.floor(_fz))+":"+pad2(Math.floor(_fz%1*60));_fv="☀ "+_fy(_fx[0])+" – "+_fy(_fx[1])}}}catch(_fA){}
   $("sunTimes").textContent=_fv}
 try{utcTick();setTimeout(utcTick,1500);setInterval(utcTick,10000)}catch(_fB){}
+try{const _fC=$("scanInfo");new MutationObserver(()=>{_fC.title=_fC.textContent}).observe(_fC,{childList:true,characterData:true,subtree:true})}catch(_fD){}
 </script>
 <script>
 const CLAPI=window.cwiuCluster||null;
