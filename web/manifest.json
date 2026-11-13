@@ -1,9 +1,9 @@
 {
-  "web": "1.12.23",
+  "web": "1.12.24",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.23.html",
-  "size": 753394,
-  "sha256": "94d1af328118ffbf87761b1b42debce5e2b7838b5d552547ac67ccceba41d636",
-  "date": "2026-11-12 23:46 UTC",
-  "notes": "Waterfall come uno skimmer: clic su un nominativo per sintonizzarlo e, in modalità QSO, preparare il collegamento (utile nei contest)"
+  "file": "cwiu1mvi-1.12.24.html",
+  "size": 776004,
+  "sha256": "906ee1bb6fc51e10dd1cb40f05f63ad54cc9226769664367003c7fbb1fd0a057",
+  "date": "2026-11-13 00:00 UTC",
+  "notes": "Nuova scheda Contest nel pannello Attività: attività CW su tutte le bande in colonne, doppi segnati, clic per sintonizzare e preparare il QSO"
 }
