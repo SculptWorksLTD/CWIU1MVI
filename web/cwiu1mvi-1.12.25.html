@@ -2037,280 +2037,281 @@ async function openAt(_ad,_ae){
   rig.writer=rig.port.writable.getWriter();rig.buf=[];rig.abuf="";rig.got=false;rig.probe=_ae;rig.idok=false;rig.proto=_ae==="civ"?"civ":null;rig.loop=readLoop();
   if(_ae==="civ"){civSend([0x19,0x00],0x00);for(const _aj of Object.keys(ICOM))civSend([0x03],+_aj)}
   else{aSend(";");await wait(60);aSend("ID;")}
-  for(let _ak=0;_ak<12&&!rig.got;_ak++)await wait(100);
+  for(let _ak=0,_al=rig.port&&rig.port.rigger?25:12;_ak<_al&&!rig.got;_ak++)await wait(100);
   if(rig.got&&rig.proto){rig.baud=_ad;evLog("CAT collegato",(rig.port&&rig.port.rigger?"The Rigger "+rig.port.rigger:"porta USB")+" "+_ad);return "ok"}
   await closePort();await wait(250);return "silent";
 }
-async function catDisconnect(_al){
-  try{if(typeof QSO!=="undefined"&&QSO.txing)qsoStop()}catch(_am){}
-  evLog("CAT scollegato",_al||"");
-  try{if(chase.on)chaseStop(undefined,"CAT scollegato")}catch(_an){}try{if(hunt.on)huntStop()}catch(_ao){}try{if(scan.on)scanStop(true)}catch(_ap){}
-  try{if(REC.on)recStop()}catch(_aq){}
+async function catDisconnect(_am){
+  try{if(typeof QSO!=="undefined"&&QSO.txing)qsoStop()}catch(_an){}
+  evLog("CAT scollegato",_am||"");
+  try{if(chase.on)chaseStop(undefined,"CAT scollegato")}catch(_ao){}try{if(hunt.on)huntStop()}catch(_ap){}try{if(scan.on)scanStop(true)}catch(_aq){}
+  try{if(REC.on)recStop()}catch(_ar){}
   if(mode==="mic")await stopAll();
   clearInterval(rig.timer);rig.timer=null;
   await closePort();rig.port=null;rig.proto=null;rig.cw=false;
   $("catBtn").textContent=T("⇄ Collega CAT");$("setCwBtn").disabled=true;$("rigName").textContent=T("radio non collegata");rigControls(false);
   rig.readRf=rig.readUsb=false;rig.pitch=0;$("rigPitch").textContent=T("pitch —");$("usbLvlV").textContent=$("rfGainV").textContent="—";if(dec){dec.auto=true;dec.fixed=null}
-  if(_al)msg(_al,true);
+  if(_am)msg(_am,true);
 }
 const RIGGER=window.cwiuRigger||null;let RIGGER_PORT=null;
-function riggerPort(_ar){let _as=null;const _at={rigger:_ar,readable:null,writable:null,
-  async open(){if(!(await Promise.race([RIGGER.open(_ar),wait(6000).then(()=>false)])))throw new Error("rigger");
-    _at.readable=new ReadableStream({start(_au){_as=_au},cancel(){_as=null}});
-    _at.writable=new WritableStream({write(_av){return RIGGER.write(_av)}})},
-  async close(){try{_as&&_as.close()}catch(_aw){}_as=null;_at.readable=null;_at.writable=null;try{await Promise.race([RIGGER.close(),wait(2000)])}catch(_ax){}},
-  async setSignals(){},getInfo(){return {}},push(_ay){if(_as)try{_as.enqueue(_ay)}catch(_az){}}};
-  RIGGER_PORT=_at;return _at}
-if(RIGGER)RIGGER.onData(_aA=>{if(RIGGER_PORT)RIGGER_PORT.push(new Uint8Array(_aA))});
+function riggerPort(_as){let _at=null;const _au={rigger:_as,readable:null,writable:null,
+  async open(){if(!(await Promise.race([RIGGER.open(_as),wait(6000).then(()=>false)])))throw new Error("rigger");
+    _au.readable=new ReadableStream({start(_av){_at=_av},cancel(){_at=null}});
+    _au.writable=new WritableStream({write(_aw){return RIGGER.write(_aw)}})},
+  async close(){try{_at&&_at.close()}catch(_ax){}_at=null;_au.readable=null;_au.writable=null;try{await Promise.race([RIGGER.close(),wait(2000)])}catch(_ay){}},
+  async setSignals(){},getInfo(){return {}},push(_az){if(_at)try{_at.enqueue(_az)}catch(_aA){}}};
+  RIGGER_PORT=_au;return _au}
+if(RIGGER)RIGGER.onData(_aB=>{if(RIGGER_PORT)RIGGER_PORT.push(new Uint8Array(_aB))});
 let RIGGER_BACK=null,RIGGER_CHASE=false;
-if(RIGGER&&RIGGER.onClosed)RIGGER.onClosed(async _aB=>{
-  if(!rig.port||rig.port.rigger!==_aB)return;
-  const _aC={name:_aB,mic:mode==="mic",chase:!!(typeof chase!=="undefined"&&chase.on)||RIGGER_CHASE,next:0};RIGGER_CHASE=false;
-  evLog("The Rigger ha chiuso la porta",_aB);
-  await catDisconnect(T("The Rigger ha chiuso la porta {0}: la ricollego appena torna.",_aB));
-  RIGGER_BACK=_aC;try{await catViaFill()}catch(_aD){}});
-if(RIGGER)setInterval(async()=>{const _aE=RIGGER_BACK;if(!_aE||rig.port||Date.now()<_aE.next)return;
-  let _aF=[];try{_aF=await RIGGER.list()}catch(_aG){}
-  if(!_aF.includes(_aE.name)||RIGGER_BACK!==_aE||rig.port)return;
-  _aE.next=Date.now()+15000;
-  try{await catViaFill()}catch(_aH){}
-  if(catViaRigger()!==_aE.name){const _aI=$("catVia");if(![..._aI.options].some(_aJ=>_aJ.value==="tr:"+_aE.name)){const _aK=document.createElement("option");_aK.value="tr:"+_aE.name;_aK.textContent="The Rigger · "+_aE.name;_aI.appendChild(_aK)}_aI.value="tr:"+_aE.name}
-  evLog("The Rigger è tornato","riprovo su "+_aE.name);
-  if(_aE.mic&&mode!=="mic")await startListening(true);
+if(RIGGER&&RIGGER.onClosed)RIGGER.onClosed(async _aC=>{
+  if(!rig.port||rig.port.rigger!==_aC)return;
+  const _aD={name:_aC,mic:mode==="mic",chase:!!(typeof chase!=="undefined"&&chase.on)||RIGGER_CHASE,next:0};RIGGER_CHASE=false;
+  evLog("The Rigger ha chiuso la porta",_aC);
+  await catDisconnect(T("The Rigger ha chiuso la porta {0}: la ricollego appena torna.",_aC));
+  RIGGER_BACK=_aD;try{await catViaFill()}catch(_aE){}});
+if(RIGGER)setInterval(async()=>{const _aF=RIGGER_BACK;if(!_aF||rig.port||Date.now()<_aF.next)return;
+  let _aG=[];try{_aG=await RIGGER.list()}catch(_aH){}
+  if(!_aG.includes(_aF.name)||RIGGER_BACK!==_aF||rig.port)return;
+  _aF.next=Date.now()+15000;
+  try{await catViaFill()}catch(_aI){}
+  if(catViaRigger()!==_aF.name){const _aJ=$("catVia");if(![..._aJ.options].some(_aK=>_aK.value==="tr:"+_aF.name)){const _aL=document.createElement("option");_aL.value="tr:"+_aF.name;_aL.textContent="The Rigger · "+_aF.name;_aJ.appendChild(_aL)}_aJ.value="tr:"+_aF.name}
+  evLog("The Rigger è tornato","riprovo su "+_aF.name);
+  if(_aF.mic&&mode!=="mic")await startListening(true);
   await catConnect();
-  if(!rig.port||RIGGER_BACK!==_aE)return;
-  RIGGER_BACK=null;msg(T("The Rigger è tornato: radio ricollegata su {0}.",_aE.name));
-  if(_aE.chase){RIGGER_CHASE=true;setTimeout(()=>{if(!RIGGER_CHASE){evLog("ripresa inseguimento annullata","");return}RIGGER_CHASE=false;try{evLog("ripresa inseguimento",(chase.on?"già attivo":"")+(rig.port?"":" CAT scollegato")+(mode==="mic"?"":" ascolto spento"));if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aL){evLog("ripresa inseguimento: errore",String(_aL&&_aL.message||_aL))}},3000)}},3000);
-function catViaRigger(){const _aM=$("catVia")?$("catVia").value:"usb";return RIGGER&&_aM&&_aM!=="usb"?_aM.replace(/^tr:/,""):""}
-async function catViaFill(){const _aN=$("catVia");if(!_aN)return;let _aO=[];try{if(RIGGER)_aO=await RIGGER.list()}catch(_aP){}
-  const _aQ=typeof RIGGER_BACK!=="undefined"&&RIGGER_BACK?RIGGER_BACK.name:"",_aR=_aQ&&!_aO.includes(_aQ)?_aQ:"";
-  const _aS=(prefs().catVia)||"usb",_aT=_aO.join()+"|"+_aR+"|"+_aQ;if(_aT===_aN.dataset.names&&_aN.options.length)return;if(_aN.dataset.names!==undefined&&_aO.join()!==String(_aN.dataset.names).split("|")[0])evLog("The Rigger: porte",_aO.join(",")||"nessuna");_aN.dataset.names=_aT;_aN.textContent="";
-  const _aU=document.createElement("option");_aU.value="usb";_aU.textContent=T("Porta USB della radio");_aN.appendChild(_aU);
-  for(const _aV of _aO){const _aW=document.createElement("option");_aW.value="tr:"+_aV;_aW.textContent="The Rigger · "+_aV;_aN.appendChild(_aW)}
-  if(_aR){const _aX=document.createElement("option");_aX.value="tr:"+_aR;_aX.textContent="The Rigger · "+_aR+" ("+T("spenta: si ricollega quando torna")+")";_aN.appendChild(_aX)}
-  _aN.value=_aQ?"tr:"+_aQ:(_aS!=="usb"&&_aO.includes(_aS.replace(/^tr:/,"")))?_aS:"usb";$("catViaRow").hidden=!_aO.length&&!_aR}
-try{$("catVia").onchange=()=>{const _aY=prefs();_aY.catVia=$("catVia").value;savePrefs(_aY);
-    if(RIGGER_BACK&&$("catVia").value!=="tr:"+RIGGER_BACK.name){RIGGER_BACK=null;RIGGER_CHASE=false;evLog("attesa The Rigger annullata",$("catVia").value);catViaFill()}};catViaFill();setInterval(()=>{if(!rig.port)catViaFill()},4000)}catch(_aZ){}
+  if(!rig.port||RIGGER_BACK!==_aF)return;
+  RIGGER_BACK=null;msg(T("The Rigger è tornato: radio ricollegata su {0}.",_aF.name));
+  if(_aF.chase){RIGGER_CHASE=true;setTimeout(()=>{if(!RIGGER_CHASE){evLog("ripresa inseguimento annullata","");return}RIGGER_CHASE=false;try{evLog("ripresa inseguimento",(chase.on?"già attivo":"")+(rig.port?"":" CAT scollegato")+(mode==="mic"?"":" ascolto spento"));if(!chase.on&&rig.port&&mode==="mic")chaseStart()}catch(_aM){evLog("ripresa inseguimento: errore",String(_aM&&_aM.message||_aM))}},3000)}},3000);
+function catViaRigger(){const _aN=$("catVia")?$("catVia").value:"usb";return RIGGER&&_aN&&_aN!=="usb"?_aN.replace(/^tr:/,""):""}
+async function catViaFill(){const _aO=$("catVia");if(!_aO)return;let _aP=[];try{if(RIGGER)_aP=await RIGGER.list()}catch(_aQ){}
+  const _aR=typeof RIGGER_BACK!=="undefined"&&RIGGER_BACK?RIGGER_BACK.name:"",_aS=_aR&&!_aP.includes(_aR)?_aR:"";
+  const _aT=(prefs().catVia)||"usb",_aU=_aP.join()+"|"+_aS+"|"+_aR;if(_aU===_aO.dataset.names&&_aO.options.length)return;if(_aO.dataset.names!==undefined&&_aP.join()!==String(_aO.dataset.names).split("|")[0])evLog("The Rigger: porte",_aP.join(",")||"nessuna");_aO.dataset.names=_aU;_aO.textContent="";
+  const _aV=document.createElement("option");_aV.value="usb";_aV.textContent=T("Porta USB della radio");_aO.appendChild(_aV);
+  for(const _aW of _aP){const _aX=document.createElement("option");_aX.value="tr:"+_aW;_aX.textContent="The Rigger · "+_aW;_aO.appendChild(_aX)}
+  if(_aS){const _aY=document.createElement("option");_aY.value="tr:"+_aS;_aY.textContent="The Rigger · "+_aS+" ("+T("spenta: si ricollega quando torna")+")";_aO.appendChild(_aY)}
+  _aO.value=_aR?"tr:"+_aR:(_aT!=="usb"&&_aP.includes(_aT.replace(/^tr:/,"")))?_aT:"usb";$("catViaRow").hidden=!_aP.length&&!_aS}
+try{$("catVia").onchange=()=>{const _aZ=prefs();_aZ.catVia=$("catVia").value;savePrefs(_aZ);
+    if(RIGGER_BACK&&$("catVia").value!=="tr:"+RIGGER_BACK.name){RIGGER_BACK=null;RIGGER_CHASE=false;evLog("attesa The Rigger annullata",$("catVia").value);catViaFill()}};catViaFill();setInterval(()=>{if(!rig.port)catViaFill()},4000)}catch(_ba){}
 $("catBtn").onclick=()=>{RIGGER_BACK=null;RIGGER_CHASE=false;catConnect()};
-async function catConnect(_ba){
+async function catConnect(_bb){
   if(rig.port){await catDisconnect();return}
   if(!("serial" in navigator)){msg(T("Il collegamento CAT non è disponibile in questa versione. Puoi comunque usare l'audio USB come ingresso."),true);return}
-  try{await catViaFill()}catch(_bb){}
-  const _bc=catViaRigger();
-  if(_bc)rig.port=riggerPort(_bc);
-  else{try{rig.port=_ba||await navigator.serial.requestPort()}
-    catch(_bd){rig.port=null;msg(T("Nessuna porta scelta."),true);return}}
-  const _be=$("brand").value,_bf=$("baud").value;
-  const _bg=[115200,19200,9600,4800],_bh=[38400,9600,4800,19200,57600,115200];
-  let _bi=[];
-  const _bj=(_bk,_bl)=>_bl.forEach(_bm=>_bi.push([_bk,_bm]));
-  if(_bf!=="auto"){const _bn=[+_bf];if(_be==="auto"||_be==="civ")_bj("civ",_bn);if(_be!=="civ")_bj("ascii",_bn)}
-  else{if(_be==="auto"||_be==="civ")_bj("civ",_bg);if(_be!=="civ")_bj("ascii",_bh)}
-  try{const _bo=JSON.parse(localStorage.getItem("tasto-cat")||"null");if(_bo&&_bi.some(_bp=>_bp[0]===_bo.probe&&_bp[1]===_bo.baud))_bi=[[_bo.probe,_bo.baud],..._bi.filter(_bq=>!(_bq[0]===_bo.probe&&_bq[1]===_bo.baud))]}catch(_br){}
+  try{await catViaFill()}catch(_bc){}
+  const _bd=catViaRigger();
+  if(_bd)rig.port=riggerPort(_bd);
+  else{try{rig.port=_bb||await navigator.serial.requestPort()}
+    catch(_be){rig.port=null;msg(T("Nessuna porta scelta."),true);return}}
+  const _bf=$("brand").value,_bg=$("baud").value;
+  const _bh=[115200,19200,9600,4800],_bi=[38400,9600,4800,19200,57600,115200];
+  let _bj=[];
+  const _bk=(_bl,_bm)=>_bm.forEach(_bn=>_bj.push([_bl,_bn]));
+  if(_bg!=="auto"){const _bo=[+_bg];if(_bf==="auto"||_bf==="civ")_bk("civ",_bo);if(_bf!=="civ")_bk("ascii",_bo)}
+  else{if(_bf==="auto"||_bf==="civ")_bk("civ",_bh);if(_bf!=="civ")_bk("ascii",_bi)}
+  if(_bd){const _bp=/^IC-?\d/i.test(_bd)&&(_bf==="auto"||_bf==="civ");_bj=_bp?[["civ",19200],["civ",19200],["ascii",38400]]:[["ascii",38400],["civ",19200]]}
+  else try{const _bq=JSON.parse(localStorage.getItem("tasto-cat")||"null");if(_bq&&_bj.some(_br=>_br[0]===_bq.probe&&_br[1]===_bq.baud))_bj=[[_bq.probe,_bq.baud],..._bj.filter(_bs=>!(_bs[0]===_bq.probe&&_bs[1]===_bq.baud))]}catch(_bt){}
   $("catBtn").textContent=T("… ricerca radio");$("catBtn").disabled=true;
-  let _bs="silent",_bt=null;
-  for(const [_bu,_bv] of _bi){$("rigName").textContent=T("provo {0} a {1} baud…",_bu==="civ"?"CI-V":"Kenwood/Yaesu/Elecraft",_bv);_bs=await openAt(_bv,_bu);if(_bs!=="silent"){_bt=_bu;break}}
+  let _bu="silent",_bv=null;
+  for(const [_bw,_bx] of _bj){$("rigName").textContent=T("provo {0} a {1} baud…",_bw==="civ"?"CI-V":"Kenwood/Yaesu/Elecraft",_bx);_bu=await openAt(_bx,_bw);if(_bu!=="silent"){_bv=_bw;break}}
   $("catBtn").disabled=false;
-  if(_bs!=="ok"){rig.port=null;rig.proto=null;$("catBtn").textContent=T("⇄ Collega CAT");$("rigName").textContent=T("radio non collegata");
-    msg(_bc?T("The Rigger non risponde su {0}: controlla che The Rigger sia aperto e che veda la radio.",_bc)
-      :_bs==="busy"?T("Non riesco ad aprire la porta: chiudi altri programmi che la usano (WSJT-X, logger, flrig) e riprova.")
+  if(_bu!=="ok"){rig.port=null;rig.proto=null;$("catBtn").textContent=T("⇄ Collega CAT");$("rigName").textContent=T("radio non collegata");
+    msg(_bd?T("The Rigger non risponde su {0}: controlla che The Rigger sia aperto e che veda la radio.",_bd)
+      :_bu==="busy"?T("Non riesco ad aprire la porta: chiudi altri programmi che la usano (WSJT-X, logger, flrig) e riprova.")
       :T("La radio non risponde. Se un altro programma sta usando la radio (The Rigger, WSJT-X, un logger) chiudilo, oppure scegli “The Rigger” in Impostazioni › Collegamento. Altrimenti controlla la porta (sulle Yaesu quella “Enhanced”) e la velocità CAT nel menu della radio; sulle Icom la porta USB del CI-V deve essere “Unlink from [REMOTE]”."),true);return}
-  try{localStorage.setItem("tasto-cat",JSON.stringify({probe:_bt,baud:rig.baud}))}catch(_bw){}
-  try{navigator.serial.getPorts().then(_bx=>{try{localStorage.setItem("cwiu-cat-port",String(_bx.indexOf(rig.port)))}catch(_by){}}).catch(()=>{})}catch(_bz){}
+  if(!_bd)try{localStorage.setItem("tasto-cat",JSON.stringify({probe:_bv,baud:rig.baud}))}catch(_by){}
+  try{navigator.serial.getPorts().then(_bz=>{try{localStorage.setItem("cwiu-cat-port",String(_bz.indexOf(rig.port)))}catch(_bA){}}).catch(()=>{})}catch(_bB){}
   showRigName();
   $("catBtn").textContent=T("✕ Scollega CAT");msg(T(""));
   rig.port.addEventListener?.("disconnect",()=>catDisconnect(T("La radio si è scollegata.")));
   rigControls(true);
-  let _bA,_bB,_bC;
+  let _bC,_bD,_bE;
   if(rig.proto==="civ"){
-    _bA=[[0x03],[0x04],[0x15,0x02],[0x15,0x02]];
-    _bB=[[0x14,0x09],[0x14,0x02],[0x16,0x02],[0x16,0x40]];_bC=civSend;
-    if(usbc())_bB.push([0x1A,0x05,0x00,usbc().lvl]);
-    if(rig.addr===0x88)_bB.push([0x1A,0x05,0x00,0x07]);
+    _bC=[[0x03],[0x04],[0x15,0x02],[0x15,0x02]];
+    _bD=[[0x14,0x09],[0x14,0x02],[0x16,0x02],[0x16,0x40]];_bE=civSend;
+    if(usbc())_bD.push([0x1A,0x05,0x00,usbc().lvl]);
+    if(rig.addr===0x88)_bD.push([0x1A,0x05,0x00,0x07]);
   }else{
-    const _bD=rig.proto==="elecraft"?"SM;":"SM0;",_bE=rig.proto==="yaesu"?"MD0;":"MD;";
-    _bA=["FA;",_bE,_bD,_bD];
-    _bB=[rig.proto==="yaesu"?"KP;":rig.proto==="elecraft"?"CW;":"PT;"];_bC=aSend;
+    const _bF=rig.proto==="elecraft"?"SM;":"SM0;",_bG=rig.proto==="yaesu"?"MD0;":"MD;";
+    _bC=["FA;",_bG,_bF,_bF];
+    _bD=[rig.proto==="yaesu"?"KP;":rig.proto==="elecraft"?"CW;":"PT;"];_bE=aSend;
   }
-  _bB.forEach((_bF,_bG)=>setTimeout(()=>_bC(_bF),80*_bG+40));
-  const _bH=rig.baud>=19200?150:300;
+  _bD.forEach((_bH,_bI)=>setTimeout(()=>_bE(_bH),80*_bI+40));
+  const _bJ=rig.baud>=19200?150:300;
   rig.pollI=0;rig.slowI=0;
-  rig.timer=setInterval(()=>{rig.tick++;polling=true;if(K7.on&&rig.tick%2===0&&rig.proto==="civ")k7Poll();else if(rig.tick%5===0)_bC(_bB[rig.slowI++%_bB.length]);else _bC(_bA[rig.pollI++%_bA.length]);polling=false},_bH);
+  rig.timer=setInterval(()=>{rig.tick++;polling=true;if(K7.on&&rig.tick%2===0&&rig.proto==="civ")k7Poll();else if(rig.tick%5===0)_bE(_bD[rig.slowI++%_bD.length]);else _bE(_bC[rig.pollI++%_bC.length]);polling=false},_bJ);
 };
-const bcd2=_bI=>{_bI=Math.max(0,Math.min(255,Math.round(_bI)));const _bJ=Math.floor(_bI/100),_bK=_bI%100;return [_bJ,((_bK/10|0)<<4)|(_bK%10)]};
-const touched={};const idle=_bL=>!(touched[_bL]>Date.now()-1500);
-function setSeg(_bM,_bN){$(_bM).querySelectorAll("button").forEach(_bO=>_bO.setAttribute("aria-pressed",String(+_bO.dataset.v===_bN)))}
-function slider(_bP,_bQ,_bR){let _bS=0;const _bT=$(_bP);
-  const _bU=()=>{_bS=0;_bR(+_bT.value)};
-  _bT.addEventListener("input",()=>{touched[_bP]=Date.now();$(_bP+"V").textContent=_bQ(+_bT.value);if(!_bS)_bS=setTimeout(_bU,120)});
-  _bT.addEventListener("change",()=>{touched[_bP]=Date.now();clearTimeout(_bS);_bU()})}
-slider("usbLvl",_bV=>_bV+"%",_bW=>{const _bX=usbc();if(_bX)civSend([0x1A,0x05,0x00,_bX.lvl,...bcd2(_bW*2.55)])});
-slider("rfGain",_bY=>_bY+"%",_bZ=>civSend([0x14,0x02,...bcd2(_bZ*2.55)]));
-$("usbPrep").onclick=()=>{const _ca=usbc();if(!_ca)return;civSend([0x1A,0x05,0x00,_ca.sel,0x00]);setTimeout(()=>civSend([0x1A,0x05,0x00,_ca.sql,0x00]),120);
-  setTimeout(()=>civSend([0x1A,0x05,0x00,_ca.lvl]),300);
+const bcd2=_bK=>{_bK=Math.max(0,Math.min(255,Math.round(_bK)));const _bL=Math.floor(_bK/100),_bM=_bK%100;return [_bL,((_bM/10|0)<<4)|(_bM%10)]};
+const touched={};const idle=_bN=>!(touched[_bN]>Date.now()-1500);
+function setSeg(_bO,_bP){$(_bO).querySelectorAll("button").forEach(_bQ=>_bQ.setAttribute("aria-pressed",String(+_bQ.dataset.v===_bP)))}
+function slider(_bR,_bS,_bT){let _bU=0;const _bV=$(_bR);
+  const _bW=()=>{_bU=0;_bT(+_bV.value)};
+  _bV.addEventListener("input",()=>{touched[_bR]=Date.now();$(_bR+"V").textContent=_bS(+_bV.value);if(!_bU)_bU=setTimeout(_bW,120)});
+  _bV.addEventListener("change",()=>{touched[_bR]=Date.now();clearTimeout(_bU);_bW()})}
+slider("usbLvl",_bX=>_bX+"%",_bY=>{const _bZ=usbc();if(_bZ)civSend([0x1A,0x05,0x00,_bZ.lvl,...bcd2(_bY*2.55)])});
+slider("rfGain",_ca=>_ca+"%",_cb=>civSend([0x14,0x02,...bcd2(_cb*2.55)]));
+$("usbPrep").onclick=()=>{const _cc=usbc();if(!_cc)return;civSend([0x1A,0x05,0x00,_cc.sel,0x00]);setTimeout(()=>civSend([0x1A,0x05,0x00,_cc.sql,0x00]),120);
+  setTimeout(()=>civSend([0x1A,0x05,0x00,_cc.lvl]),300);
   msg(T("Uscita USB impostata su audio AF con squelch aperto. Regola il livello finché l'indicatore Ingresso sta tra −30 e −6 dBFS."))};
-$("filSeg").onclick=_cb=>{const _cc=_cb.target.closest("button");if(!_cc)return;civSend([0x06,rig.civMode===7?0x07:0x03,+_cc.dataset.v]);setSeg("filSeg",+_cc.dataset.v)};
-$("preSeg").onclick=_cd=>{const _ce=_cd.target.closest("button");if(!_ce)return;civSend([0x16,0x02,+_ce.dataset.v]);setSeg("preSeg",+_ce.dataset.v)};
-$("nr").onchange=_cf=>civSend([0x16,0x40,_cf.target.checked?1:0]);
-function rigControls(_cg){
-  $("rigCtl").disabled=!_cg;tuneControls(_cg);if(!_cg&&hunt.on)huntStop(T("Monitoraggio fermato: CAT scollegato."));if(!_cg&&typeof chase!=="undefined"&&chase.on)chaseStop(T("Inseguimento fermato."),"CAT spento");if(!_cg&&scan.on)scanStop(true);
-  const _ch=_cg&&rig.proto==="civ",_ci=_ch&&!!usbc();
-  try{k7Enable(_ch&&rig.addr===0x88)}catch(_cj){}
-  document.querySelectorAll("[data-usb]").forEach(_ck=>_ck.disabled=!_ci);
-  $("usbLvl").disabled=!(_ci&&rig.readUsb);$("rfGain").disabled=!(_ch&&rig.readRf);$("nr").disabled=!_ch;
-  document.querySelectorAll("#filSeg button,#preSeg button").forEach(_cl=>_cl.disabled=!_ch);
-  $("ctlHint").textContent=!_cg?T("collega il CAT per usarli"):_ch?(_ci?"":T("il livello dell'uscita USB è disponibile su IC-7100 e IC-7300")):T("su {0} sono disponibili pitch e modo CW",BRAND[rig.proto]||T("questa radio"));
+$("filSeg").onclick=_cd=>{const _ce=_cd.target.closest("button");if(!_ce)return;civSend([0x06,rig.civMode===7?0x07:0x03,+_ce.dataset.v]);setSeg("filSeg",+_ce.dataset.v)};
+$("preSeg").onclick=_cf=>{const _cg=_cf.target.closest("button");if(!_cg)return;civSend([0x16,0x02,+_cg.dataset.v]);setSeg("preSeg",+_cg.dataset.v)};
+$("nr").onchange=_ch=>civSend([0x16,0x40,_ch.target.checked?1:0]);
+function rigControls(_ci){
+  $("rigCtl").disabled=!_ci;tuneControls(_ci);if(!_ci&&hunt.on)huntStop(T("Monitoraggio fermato: CAT scollegato."));if(!_ci&&typeof chase!=="undefined"&&chase.on)chaseStop(T("Inseguimento fermato."),"CAT spento");if(!_ci&&scan.on)scanStop(true);
+  const _cj=_ci&&rig.proto==="civ",_ck=_cj&&!!usbc();
+  try{k7Enable(_cj&&rig.addr===0x88)}catch(_cl){}
+  document.querySelectorAll("[data-usb]").forEach(_cm=>_cm.disabled=!_ck);
+  $("usbLvl").disabled=!(_ck&&rig.readUsb);$("rfGain").disabled=!(_cj&&rig.readRf);$("nr").disabled=!_cj;
+  document.querySelectorAll("#filSeg button,#preSeg button").forEach(_cn=>_cn.disabled=!_cj);
+  $("ctlHint").textContent=!_ci?T("collega il CAT per usarli"):_cj?(_ck?"":T("il livello dell'uscita USB è disponibile su IC-7100 e IC-7300")):T("su {0} sono disponibili pitch e modo CW",BRAND[rig.proto]||T("questa radio"));
 }
 $("setCwBtn").onclick=()=>cat.cwMode();
-function rfHint(){const _cm=$("rfHint");const _cn=rig.addr===0x88&&rig.rfsql===1;_cm.hidden=!_cn;
-  if(_cn)_cm.textContent=T("Sulla radio il comando RF/SQL è su “SQL”: il guadagno RF non ha effetto. Impostalo su AUTO o RF+SQL (vedi Guida › IC-7100).")}
+function rfHint(){const _co=$("rfHint");const _cp=rig.addr===0x88&&rig.rfsql===1;_co.hidden=!_cp;
+  if(_cp)_co.textContent=T("Sulla radio il comando RF/SQL è su “SQL”: il guadagno RF non ha effetto. Impostalo su AUTO o RF+SQL (vedi Guida › IC-7100).")}
 const CW_BANDS=[["160",1810000,1838000],["80",3500000,3570000],["60",5351500,5354500],["40",7000000,7040000],["30",10100000,10130000],["20",14000000,14070000],["17",18068000,18095000],["15",21000000,21070000],["12",24890000,24915000],["10",28000000,28070000],["6",50000000,50100000],["2",144000000,144150000],["70cm",432000000,432100000]];
-function curBand(_co){_co=_co||rig.freq;return CW_BANDS.find(_cp=>_co>=_cp[1]-30000&&_co<=_cp[2]+130000)}
-(()=>{const _cq=$("bands");CW_BANDS.forEach(_cr=>{const _cs=document.createElement("button");_cs.type="button";_cs.textContent=/cm/.test(_cr[0])?_cr[0].replace("cm"," cm"):_cr[0]+" m";_cs.dataset.b=_cr[0];_cs.disabled=true;
-  _cs.onclick=()=>{let _ct=_cr[1]+Math.min(25000,(_cr[2]-_cr[1])/2);try{const _cu=+localStorage.getItem("cwiu-band-"+_cr[0]);if(_cu)_ct=_cu}catch(_cv){}cat.setFreq(_ct)};_cq.appendChild(_cs)})})();
-function markBand(){const _cw=curBand();document.querySelectorAll("#bands button").forEach(_cx=>_cx.setAttribute("aria-pressed",String(!!_cw&&_cx.dataset.b===_cw[0])));
-  if(_cw&&rig.freq>=_cw[1]&&rig.freq<=_cw[2]+60000){try{localStorage.setItem("cwiu-band-"+_cw[0],rig.freq)}catch(_cy){}}}
-function parseKHz(_cz){_cz=String(_cz).trim().replace(/\s/g,"");if(!_cz)return null;
-  if(/^\d+[.,]\d{3}[.,]\d+$/.test(_cz)){const _cA=_cz.split(/[.,]/);return +(_cA[0]+_cA[1]+_cA[2].padEnd(3,"0").slice(0,3))}
-  const _cB=parseFloat(_cz.replace(",","."));if(!isFinite(_cB))return null;
-  return _cB<100?Math.round(_cB*1e6):Math.round(_cB*1000)}
-$("fGo").onclick=()=>{const _cC=parseKHz($("fIn").value);if(!_cC){msg(T("Scrivi la frequenza in kHz, per esempio 14025.5, oppure in MHz, per esempio 14.0255."),true);return}cat.setFreq(_cC);$("fIn").blur()};
-$("fIn").addEventListener("keydown",_cD=>{if(_cD.key==="Enter"){_cD.preventDefault();$("fGo").click()}
-  else if(_cD.key==="ArrowUp"||_cD.key==="ArrowDown"){_cD.preventDefault();stepTune(_cD.key==="ArrowUp"?1:-1)}});
-function stepTune(_cE){if(!rig.port||!rig.freq)return;const _cF=+$("fStep").value,_cG=rig.freq;cat.setFreq(_cE>0?Math.floor(_cG/_cF)*_cF+_cF:Math.ceil(_cG/_cF)*_cF-_cF)}
+function curBand(_cq){_cq=_cq||rig.freq;return CW_BANDS.find(_cr=>_cq>=_cr[1]-30000&&_cq<=_cr[2]+130000)}
+(()=>{const _cs=$("bands");CW_BANDS.forEach(_ct=>{const _cu=document.createElement("button");_cu.type="button";_cu.textContent=/cm/.test(_ct[0])?_ct[0].replace("cm"," cm"):_ct[0]+" m";_cu.dataset.b=_ct[0];_cu.disabled=true;
+  _cu.onclick=()=>{let _cv=_ct[1]+Math.min(25000,(_ct[2]-_ct[1])/2);try{const _cw=+localStorage.getItem("cwiu-band-"+_ct[0]);if(_cw)_cv=_cw}catch(_cx){}cat.setFreq(_cv)};_cs.appendChild(_cu)})})();
+function markBand(){const _cy=curBand();document.querySelectorAll("#bands button").forEach(_cz=>_cz.setAttribute("aria-pressed",String(!!_cy&&_cz.dataset.b===_cy[0])));
+  if(_cy&&rig.freq>=_cy[1]&&rig.freq<=_cy[2]+60000){try{localStorage.setItem("cwiu-band-"+_cy[0],rig.freq)}catch(_cA){}}}
+function parseKHz(_cB){_cB=String(_cB).trim().replace(/\s/g,"");if(!_cB)return null;
+  if(/^\d+[.,]\d{3}[.,]\d+$/.test(_cB)){const _cC=_cB.split(/[.,]/);return +(_cC[0]+_cC[1]+_cC[2].padEnd(3,"0").slice(0,3))}
+  const _cD=parseFloat(_cB.replace(",","."));if(!isFinite(_cD))return null;
+  return _cD<100?Math.round(_cD*1e6):Math.round(_cD*1000)}
+$("fGo").onclick=()=>{const _cE=parseKHz($("fIn").value);if(!_cE){msg(T("Scrivi la frequenza in kHz, per esempio 14025.5, oppure in MHz, per esempio 14.0255."),true);return}cat.setFreq(_cE);$("fIn").blur()};
+$("fIn").addEventListener("keydown",_cF=>{if(_cF.key==="Enter"){_cF.preventDefault();$("fGo").click()}
+  else if(_cF.key==="ArrowUp"||_cF.key==="ArrowDown"){_cF.preventDefault();stepTune(_cF.key==="ArrowUp"?1:-1)}});
+function stepTune(_cG){if(!rig.port||!rig.freq)return;const _cH=+$("fStep").value,_cI=rig.freq;cat.setFreq(_cG>0?Math.floor(_cI/_cH)*_cH+_cH:Math.ceil(_cI/_cH)*_cH-_cH)}
 $("fUp").onclick=()=>stepTune(1);$("fDn").onclick=()=>stepTune(-1);
-let wheelT=0;$("rigFreq").addEventListener("wheel",_cH=>{if(!rig.port)return;_cH.preventDefault();const _cI=performance.now();if(_cI-wheelT<40)return;wheelT=_cI;stepTune(_cH.deltaY<0?1:-1)},{passive:false});
-function tuneControls(_cJ){["fIn","fGo","fUp","fDn","scanBtn","huntBtn"].forEach(_cK=>$(_cK).disabled=!_cJ);$("chaseBtn").disabled=!_cJ||!window.cwiuCluster;document.querySelectorAll("#bands button").forEach(_cL=>_cL.disabled=!_cJ);
-  $("tuneHint").textContent=_cJ?T("Solo note CW: il rumore resta scuro. Clicca una traccia per sintonizzarla. Rotella sul display della frequenza o frecce ↑↓ nel campo per cambiare di un passo."):T("Solo note CW: il rumore resta scuro. Clicca una traccia per sintonizzarla. Collega il CAT per cambiare frequenza.")}
+let wheelT=0;$("rigFreq").addEventListener("wheel",_cJ=>{if(!rig.port)return;_cJ.preventDefault();const _cK=performance.now();if(_cK-wheelT<40)return;wheelT=_cK;stepTune(_cJ.deltaY<0?1:-1)},{passive:false});
+function tuneControls(_cL){["fIn","fGo","fUp","fDn","scanBtn","huntBtn"].forEach(_cM=>$(_cM).disabled=!_cL);$("chaseBtn").disabled=!_cL||!window.cwiuCluster;document.querySelectorAll("#bands button").forEach(_cN=>_cN.disabled=!_cL);
+  $("tuneHint").textContent=_cL?T("Solo note CW: il rumore resta scuro. Clicca una traccia per sintonizzarla. Rotella sul display della frequenza o frecce ↑↓ nel campo per cambiare di un passo."):T("Solo note CW: il rumore resta scuro. Clicca una traccia per sintonizzarla. Collega il CAT per cambiare frequenza.")}
 const WF={N:2048,lo:200,hi:1600,re:null,im:null,win:null,last:0,rows:0};
-WF.re=new Float32Array(WF.N);WF.im=new Float32Array(WF.N);WF.win=new Float32Array(WF.N);for(let _cM=0;_cM<WF.N;_cM++){const _cN=2*Math.PI*_cM/(WF.N-1);WF.win[_cM]=0.5-0.5*Math.cos(_cN)}
-function fftWF(){const _cO=WF.N,_cP=WF.re,_cQ=WF.im;
-  for(let _cR=1,_cS=0;_cR<_cO;_cR++){let _cT=_cO>>1;for(;_cS&_cT;_cT>>=1)_cS^=_cT;_cS^=_cT;if(_cR<_cS){let _cU=_cP[_cR];_cP[_cR]=_cP[_cS];_cP[_cS]=_cU;_cU=_cQ[_cR];_cQ[_cR]=_cQ[_cS];_cQ[_cS]=_cU}}
-  for(let _cV=2;_cV<=_cO;_cV<<=1){const _cW=-2*Math.PI/_cV,_cX=Math.cos(_cW),_cY=Math.sin(_cW);
-    for(let _cZ=0;_cZ<_cO;_cZ+=_cV){let _da=1,_db=0;for(let _dc=0;_dc<_cV/2;_dc++){const _dd=_cZ+_dc,_de=_dd+_cV/2,_df=_cP[_de]*_da-_cQ[_de]*_db,_dg=_cP[_de]*_db+_cQ[_de]*_da;
-      _cP[_de]=_cP[_dd]-_df;_cQ[_de]=_cQ[_dd]-_dg;_cP[_dd]+=_df;_cQ[_dd]+=_dg;const _dh=_da*_cX-_db*_cY;_db=_da*_cY+_db*_cX;_da=_dh}}}}
+WF.re=new Float32Array(WF.N);WF.im=new Float32Array(WF.N);WF.win=new Float32Array(WF.N);for(let _cO=0;_cO<WF.N;_cO++){const _cP=2*Math.PI*_cO/(WF.N-1);WF.win[_cO]=0.5-0.5*Math.cos(_cP)}
+function fftWF(){const _cQ=WF.N,_cR=WF.re,_cS=WF.im;
+  for(let _cT=1,_cU=0;_cT<_cQ;_cT++){let _cV=_cQ>>1;for(;_cU&_cV;_cV>>=1)_cU^=_cV;_cU^=_cV;if(_cT<_cU){let _cW=_cR[_cT];_cR[_cT]=_cR[_cU];_cR[_cU]=_cW;_cW=_cS[_cT];_cS[_cT]=_cS[_cU];_cS[_cU]=_cW}}
+  for(let _cX=2;_cX<=_cQ;_cX<<=1){const _cY=-2*Math.PI/_cX,_cZ=Math.cos(_cY),_da=Math.sin(_cY);
+    for(let _db=0;_db<_cQ;_db+=_cX){let _dc=1,_dd=0;for(let _de=0;_de<_cX/2;_de++){const _df=_db+_de,_dg=_df+_cX/2,_dh=_cR[_dg]*_dc-_cS[_dg]*_dd,_di=_cR[_dg]*_dd+_cS[_dg]*_dc;
+      _cR[_dg]=_cR[_df]-_dh;_cS[_dg]=_cS[_df]-_di;_cR[_df]+=_dh;_cS[_df]+=_di;const _dj=_dc*_cZ-_dd*_da;_dd=_dc*_da+_dd*_cZ;_dc=_dj}}}}
 function wfAnalyze(){
   if(!dec||!dec.hbuf||dec.hFill<WF.N)return null;
-  const _di=WF.N,_dj=dec.fs;let _dk=dec.hp-_di;if(_dk<0)_dk+=dec.hN;
-  for(let _dl=0;_dl<_di;_dl++){WF.re[_dl]=dec.hbuf[_dk]*WF.win[_dl];WF.im[_dl]=0;if(++_dk>=dec.hN)_dk=0}
+  const _dk=WF.N,_dl=dec.fs;let _dm=dec.hp-_dk;if(_dm<0)_dm+=dec.hN;
+  for(let _dn=0;_dn<_dk;_dn++){WF.re[_dn]=dec.hbuf[_dm]*WF.win[_dn];WF.im[_dn]=0;if(++_dm>=dec.hN)_dm=0}
   fftWF();
-  const _dm=_dj/_di,_dn=Math.max(1,Math.floor(WF.lo/_dm)),_do=Math.min(_di/2-1,Math.ceil(WF.hi/_dm));
-  const _dp=new Float32Array(_do-_dn+1);for(let _dq=_dn;_dq<=_do;_dq++)_dp[_dq-_dn]=WF.re[_dq]*WF.re[_dq]+WF.im[_dq]*WF.im[_dq];
-  WF.avg=WF.avg&&WF.avg.length===_dp.length?WF.avg:new Float32Array(_dp.length);
-  for(let _dr=0;_dr<_dp.length;_dr++)WF.avg[_dr]=WF.avg[_dr]*0.6+_dp[_dr]*0.4;
-  const _ds=new Float32Array(_dp.length),_dt=Math.round(110/_dm),_du=Math.max(2,Math.round(25/_dm));
-  const _dv=[];for(let _dw=0;_dw<_dp.length;_dw++){_dv.length=0;for(let _dx=_dw-_dt;_dx<=_dw+_dt;_dx++){if(_dx<0||_dx>=_dp.length||Math.abs(_dx-_dw)<=_du)continue;_dv.push(WF.avg[_dx])}
-    _dv.sort((_dy,_dz)=>_dy-_dz);const _dA=_dv.length?_dv[_dv.length>>1]:1e-12;_ds[_dw]=WF.avg[_dw]/(_dA+1e-15)}
-  const _dB=Float32Array.from(WF.avg).sort(),_dC=_dB[Math.floor(_dB.length*0.65)]+1e-15;
-  WF.floor=WF.floor?WF.floor*0.9+_dC*0.1:_dC;
-  const _dD=Float32Array.from(_dp).sort(),_dE=Math.max(WF.floor,0.8*_dD[Math.floor(_dD.length*0.65)]);
-  const _dF=new Float32Array(_dp.length);for(let _dG=0;_dG<_dp.length;_dG++)_dF[_dG]=10*Math.log10((_dp[_dG]*0.6+WF.avg[_dG]*0.4)/_dE+1e-9);
-  {const _dH=Math.max(3,Math.round(22/_dm)),_dI=new Float64Array(_dF.length+1);for(let _dJ=0;_dJ<_dF.length;_dJ++)_dI[_dJ+1]=_dI[_dJ]+_dF[_dJ];const _dK=new Float32Array(_dF.length);
-    for(let _dL=0;_dL<_dF.length;_dL++){const _dM=Math.max(0,_dL-_dH),_dN=Math.min(_dF.length,_dL+_dH+1),_dO=(_dI[_dN]-_dI[_dM])/(_dN-_dM);_dK[_dL]=_dF[_dL]+1.3*(_dF[_dL]-_dO)}_dF.set(_dK)}
-  {const _dP=Math.round(260/_dm),_dQ=_dF.length,_dR=new Float32Array(_dQ);for(let _dS=0;_dS<_dQ;_dS++){let _dT=-99;for(let _dU=Math.max(0,_dS-_dP);_dU<Math.min(_dQ,_dS+_dP+1);_dU+=2)if(_dF[_dU]>_dT)_dT=_dF[_dU];_dR[_dS]=_dT}for(let _dV=0;_dV<_dQ;_dV++)if(_dF[_dV]<_dR[_dV]-24)_dF[_dV]=-99}
-  return {b0:_dn,df:_dm,sc:_ds,db:_dF};
+  const _do=_dl/_dk,_dp=Math.max(1,Math.floor(WF.lo/_do)),_dq=Math.min(_dk/2-1,Math.ceil(WF.hi/_do));
+  const _dr=new Float32Array(_dq-_dp+1);for(let _ds=_dp;_ds<=_dq;_ds++)_dr[_ds-_dp]=WF.re[_ds]*WF.re[_ds]+WF.im[_ds]*WF.im[_ds];
+  WF.avg=WF.avg&&WF.avg.length===_dr.length?WF.avg:new Float32Array(_dr.length);
+  for(let _dt=0;_dt<_dr.length;_dt++)WF.avg[_dt]=WF.avg[_dt]*0.6+_dr[_dt]*0.4;
+  const _du=new Float32Array(_dr.length),_dv=Math.round(110/_do),_dw=Math.max(2,Math.round(25/_do));
+  const _dx=[];for(let _dy=0;_dy<_dr.length;_dy++){_dx.length=0;for(let _dz=_dy-_dv;_dz<=_dy+_dv;_dz++){if(_dz<0||_dz>=_dr.length||Math.abs(_dz-_dy)<=_dw)continue;_dx.push(WF.avg[_dz])}
+    _dx.sort((_dA,_dB)=>_dA-_dB);const _dC=_dx.length?_dx[_dx.length>>1]:1e-12;_du[_dy]=WF.avg[_dy]/(_dC+1e-15)}
+  const _dD=Float32Array.from(WF.avg).sort(),_dE=_dD[Math.floor(_dD.length*0.65)]+1e-15;
+  WF.floor=WF.floor?WF.floor*0.9+_dE*0.1:_dE;
+  const _dF=Float32Array.from(_dr).sort(),_dG=Math.max(WF.floor,0.8*_dF[Math.floor(_dF.length*0.65)]);
+  const _dH=new Float32Array(_dr.length);for(let _dI=0;_dI<_dr.length;_dI++)_dH[_dI]=10*Math.log10((_dr[_dI]*0.6+WF.avg[_dI]*0.4)/_dG+1e-9);
+  {const _dJ=Math.max(3,Math.round(22/_do)),_dK=new Float64Array(_dH.length+1);for(let _dL=0;_dL<_dH.length;_dL++)_dK[_dL+1]=_dK[_dL]+_dH[_dL];const _dM=new Float32Array(_dH.length);
+    for(let _dN=0;_dN<_dH.length;_dN++){const _dO=Math.max(0,_dN-_dJ),_dP=Math.min(_dH.length,_dN+_dJ+1),_dQ=(_dK[_dP]-_dK[_dO])/(_dP-_dO);_dM[_dN]=_dH[_dN]+1.3*(_dH[_dN]-_dQ)}_dH.set(_dM)}
+  {const _dR=Math.round(260/_do),_dS=_dH.length,_dT=new Float32Array(_dS);for(let _dU=0;_dU<_dS;_dU++){let _dV=-99;for(let _dW=Math.max(0,_dU-_dR);_dW<Math.min(_dS,_dU+_dR+1);_dW+=2)if(_dH[_dW]>_dV)_dV=_dH[_dW];_dT[_dU]=_dV}for(let _dX=0;_dX<_dS;_dX++)if(_dH[_dX]<_dT[_dX]-24)_dH[_dX]=-99}
+  return {b0:_dp,df:_do,sc:_du,db:_dH};
 }
 let WFPAL={bg:"#0b0f0c",c:[[11,15,12],[20,70,45],[240,172,58],[255,245,220]]};
-function hexRgb(_dW){_dW=String(_dW).trim().replace("#","");if(_dW.length===3)_dW=_dW.split("").map(_dX=>_dX+_dX).join("");const _dY=parseInt(_dW,16);return isFinite(_dY)?[_dY>>16&255,_dY>>8&255,_dY&255]:null}
-function readWfPal(){const _dZ=getComputedStyle(document.documentElement);const _ea=["--wf0","--wf1","--wf2","--wf3"].map(_eb=>hexRgb(_dZ.getPropertyValue(_eb)));
-  if(!_ea.every(Boolean))return;const _ec=_dZ.getPropertyValue("--wf-bg").trim()||"#0b0f0c";
-  if(_ec!==WFPAL.bg||JSON.stringify(_ea)!==JSON.stringify(WFPAL.c)){WFPAL={bg:_ec,c:_ea};$("wf")._w=0}}
-function wfColor(_ed){ // 0..1 -> fondo, scuro, colore del segnale, bianco (dallo stile scelto)
-  const _ee=WFPAL.c;const _ef=Math.min(0.999,Math.max(0,_ed))*3,_eg=Math.floor(_ef),_eh=_ef-_eg;
-  return _ee[_eg].map((_ei,_ej)=>Math.round(_ei+(_ee[_eg+1][_ej]-_ei)*_eh))}
+function hexRgb(_dY){_dY=String(_dY).trim().replace("#","");if(_dY.length===3)_dY=_dY.split("").map(_dZ=>_dZ+_dZ).join("");const _ea=parseInt(_dY,16);return isFinite(_ea)?[_ea>>16&255,_ea>>8&255,_ea&255]:null}
+function readWfPal(){const _eb=getComputedStyle(document.documentElement);const _ec=["--wf0","--wf1","--wf2","--wf3"].map(_ed=>hexRgb(_eb.getPropertyValue(_ed)));
+  if(!_ec.every(Boolean))return;const _ee=_eb.getPropertyValue("--wf-bg").trim()||"#0b0f0c";
+  if(_ee!==WFPAL.bg||JSON.stringify(_ec)!==JSON.stringify(WFPAL.c)){WFPAL={bg:_ee,c:_ec};$("wf")._w=0}}
+function wfColor(_ef){ // 0..1 -> fondo, scuro, colore del segnale, bianco (dallo stile scelto)
+  const _eg=WFPAL.c;const _eh=Math.min(0.999,Math.max(0,_ef))*3,_ei=Math.floor(_eh),_ej=_eh-_ei;
+  return _eg[_ei].map((_ek,_el)=>Math.round(_ek+(_eg[_ei+1][_el]-_ek)*_ej))}
 let WFLUT=null,WFLUTK="";
-function wfLut(){const _ek=JSON.stringify(WFPAL.c);if(WFLUT&&_ek===WFLUTK)return WFLUT;const _el=WFPAL.c,_em=(_en,_eo,_ep)=>_en.map((_eq,_er)=>_eq+(_eo[_er]-_eq)*_ep);
-  const _es=[[0,_el[0]],[0.16,_em(_el[0],_el[1],0.55)],[0.38,_el[1]],[0.6,_em(_el[1],_el[2],0.6)],[0.8,_el[2]],[1,_el[3]]];
-  const _et=new Uint8Array(256*3);for(let _eu=0;_eu<256;_eu++){const _ev=_eu/255;let _ew=0;while(_ew<_es.length-2&&_ev>_es[_ew+1][0])_ew++;const _ex=(_ev-_es[_ew][0])/(_es[_ew+1][0]-_es[_ew][0]),_ey=_em(_es[_ew][1],_es[_ew+1][1],Math.max(0,Math.min(1,_ex)));_et[_eu*3]=_ey[0];_et[_eu*3+1]=_ey[1];_et[_eu*3+2]=_ey[2]}
-  WFLUT=_et;WFLUTK=_ek;return _et}
-function afToRf(_ez){return rig.freq+cwSide()*(_ez-(rig.pitch||600))}
-function wfFlip(){try{return !!(rig.port&&rig.freq)&&cwSide()<0}catch(_eA){return false}}
-function wfAf(_eB){return wfFlip()?WF.hi-_eB*(WF.hi-WF.lo):WF.lo+_eB*(WF.hi-WF.lo)}
-function wfFr(_eC){const _eD=(_eC-WF.lo)/(WF.hi-WF.lo);return wfFlip()?1-_eD:_eD}
-function drawWF(_eE){
-  const _eF=$("wf");if(!_eF.clientWidth)return;
-  const _eG=mode==="mic";if(!_eG||_eE-WF.last<45)return;WF.last=_eE;
-  const _eH=wfAnalyze();if(!_eH)return;
-  const [_eI,_eJ,_eK]=fit(_eF),_eL=_eF.getContext("2d"),_eM=Math.max(1,Math.round(_eK));
-  const _eN=wfFlip();if(_eF._w!==_eI||_eF._h!==_eJ||_eF._flip!==_eN){_eL.fillStyle=WFPAL.bg;_eL.fillRect(0,0,_eI,_eJ);_eF._w=_eI;_eF._h=_eJ;_eF._flip=_eN;WF.rows=0}
-  _eL.drawImage(_eF,0,0,_eI,_eJ-_eM,0,_eM,_eI,_eJ-_eM);
-  const _eO=_eL.createImageData(_eI,_eM),_eP=WF.hi-WF.lo,_eQ=wfLut(),_eR=_eH.db,_eS=_eR.length;
-  for(let _eT=0;_eT<_eI;_eT++){const _eU=wfAf((_eT+0.5)/_eI)/_eH.df-_eH.b0,_eV=Math.floor(_eU),_eW=_eU-_eV;
-    const _eX=_eR[Math.max(0,Math.min(_eS-1,_eV))],_eY=_eR[Math.max(0,Math.min(_eS-1,_eV+1))],_eZ=_eX+(_eY-_eX)*_eW;
-    let _fa=(_eZ-5)/34;_fa=_fa<0?0:_fa>1?1:_fa;_fa=Math.pow(_fa,1.15);const _fb=Math.round(_fa*255)*3;
-    for(let _fc=0;_fc<_eM;_fc++){const _fd=(_fc*_eI+_eT)*4;_eO.data[_fd]=_eQ[_fb];_eO.data[_fd+1]=_eQ[_fb+1];_eO.data[_fd+2]=_eQ[_fb+2];_eO.data[_fd+3]=255}}
-  _eL.putImageData(_eO,0,0);
-  if(scan.on)scanCollect(_eH);
-  drawWFOverlay(_eI,_eJ,_eK,_eP);
+function wfLut(){const _em=JSON.stringify(WFPAL.c);if(WFLUT&&_em===WFLUTK)return WFLUT;const _en=WFPAL.c,_eo=(_ep,_eq,_er)=>_ep.map((_es,_et)=>_es+(_eq[_et]-_es)*_er);
+  const _eu=[[0,_en[0]],[0.16,_eo(_en[0],_en[1],0.55)],[0.38,_en[1]],[0.6,_eo(_en[1],_en[2],0.6)],[0.8,_en[2]],[1,_en[3]]];
+  const _ev=new Uint8Array(256*3);for(let _ew=0;_ew<256;_ew++){const _ex=_ew/255;let _ey=0;while(_ey<_eu.length-2&&_ex>_eu[_ey+1][0])_ey++;const _ez=(_ex-_eu[_ey][0])/(_eu[_ey+1][0]-_eu[_ey][0]),_eA=_eo(_eu[_ey][1],_eu[_ey+1][1],Math.max(0,Math.min(1,_ez)));_ev[_ew*3]=_eA[0];_ev[_ew*3+1]=_eA[1];_ev[_ew*3+2]=_eA[2]}
+  WFLUT=_ev;WFLUTK=_em;return _ev}
+function afToRf(_eB){return rig.freq+cwSide()*(_eB-(rig.pitch||600))}
+function wfFlip(){try{return !!(rig.port&&rig.freq)&&cwSide()<0}catch(_eC){return false}}
+function wfAf(_eD){return wfFlip()?WF.hi-_eD*(WF.hi-WF.lo):WF.lo+_eD*(WF.hi-WF.lo)}
+function wfFr(_eE){const _eF=(_eE-WF.lo)/(WF.hi-WF.lo);return wfFlip()?1-_eF:_eF}
+function drawWF(_eG){
+  const _eH=$("wf");if(!_eH.clientWidth)return;
+  const _eI=mode==="mic";if(!_eI||_eG-WF.last<45)return;WF.last=_eG;
+  const _eJ=wfAnalyze();if(!_eJ)return;
+  const [_eK,_eL,_eM]=fit(_eH),_eN=_eH.getContext("2d"),_eO=Math.max(1,Math.round(_eM));
+  const _eP=wfFlip();if(_eH._w!==_eK||_eH._h!==_eL||_eH._flip!==_eP){_eN.fillStyle=WFPAL.bg;_eN.fillRect(0,0,_eK,_eL);_eH._w=_eK;_eH._h=_eL;_eH._flip=_eP;WF.rows=0}
+  _eN.drawImage(_eH,0,0,_eK,_eL-_eO,0,_eO,_eK,_eL-_eO);
+  const _eQ=_eN.createImageData(_eK,_eO),_eR=WF.hi-WF.lo,_eS=wfLut(),_eT=_eJ.db,_eU=_eT.length;
+  for(let _eV=0;_eV<_eK;_eV++){const _eW=wfAf((_eV+0.5)/_eK)/_eJ.df-_eJ.b0,_eX=Math.floor(_eW),_eY=_eW-_eX;
+    const _eZ=_eT[Math.max(0,Math.min(_eU-1,_eX))],_fa=_eT[Math.max(0,Math.min(_eU-1,_eX+1))],_fb=_eZ+(_fa-_eZ)*_eY;
+    let _fc=(_fb-5)/34;_fc=_fc<0?0:_fc>1?1:_fc;_fc=Math.pow(_fc,1.15);const _fd=Math.round(_fc*255)*3;
+    for(let _fe=0;_fe<_eO;_fe++){const _ff=(_fe*_eK+_eV)*4;_eQ.data[_ff]=_eS[_fd];_eQ.data[_ff+1]=_eS[_fd+1];_eQ.data[_ff+2]=_eS[_fd+2];_eQ.data[_ff+3]=255}}
+  _eN.putImageData(_eQ,0,0);
+  if(scan.on)scanCollect(_eJ);
+  drawWFOverlay(_eK,_eL,_eM,_eR);
   WF.rows++;if(WF.rows%22===1)drawWFAxis();
 }
-function drawWFOverlay(_fe,_ff,_fg,_fh){
-  const _fi=$("wfOv");if(!_fi)return;if(_fi.width!==_fe||_fi.height!==_ff){_fi.width=_fe;_fi.height=_ff}
-  const _fj=_fi.getContext("2d");_fj.clearRect(0,0,_fe,_ff);const _fk=_fl=>wfFr(_fl)*_fe;
-  const _fm=_fj.createLinearGradient(0,0,0,_ff);_fm.addColorStop(0,"rgba(0,0,0,0)");_fm.addColorStop(0.55,"rgba(0,0,0,0)");_fm.addColorStop(1,"rgba(0,0,0,.45)");_fj.fillStyle=_fm;_fj.fillRect(0,0,_fe,_ff);
-  const _fn=WFPAL.c[2],_fo=_fp=>"rgba("+_fn[0]+","+_fn[1]+","+_fn[2]+","+_fp+")";
-  const _fq=Math.round(_fk(dec.freq))+0.5;_fj.strokeStyle=_fo(0.55);_fj.lineWidth=Math.max(1,_fg);_fj.setLineDash([3*_fg,3*_fg]);_fj.beginPath();_fj.moveTo(_fq,0);_fj.lineTo(_fq,_ff);_fj.stroke();_fj.setLineDash([]);
-  _fj.fillStyle=_fo(0.95);_fj.beginPath();_fj.moveTo(_fq-5*_fg,0);_fj.lineTo(_fq+5*_fg,0);_fj.lineTo(_fq,7*_fg);_fj.closePath();_fj.fill();
-  try{const _fr=Math.round(10*_fg);_fj.font="600 "+_fr+"px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-lcd")||"monospace");_fj.textBaseline="top";const _fs=[],_ft=performance.now(),_fu=[];WF.hits=[];
-    for(const _fv of SK.list){const _fw=_fv.msg,_fx=(_fw&&_fw.from)||_fv.from;if(!_fx||_ft-_fv.last>25000||_fv.f<WF.lo||_fv.f>WF.hi)continue;_fu.push({f:_fv.f,call:_fx+(_fw&&_fw.from&&_fw.guess&&!_fv.from?"?":""),k:0,sk:_fv,dx:_fx})}
-    if(rig.port&&rig.freq&&typeof CL!=="undefined"){const _fy=Date.now(),_fz=cwSide(),_fA=rig.pitch||600;for(const _fB of CL.spots.values()){if(_fy-_fB.t>5*60000)continue;const _fC=_fA+(_fB.hz-rig.freq)*_fz;if(_fC<WF.lo+20||_fC>WF.hi-20)continue;
-      if(_fu.some(_fD=>_fD.call.replace("?","")===_fB.call))continue;_fu.push({f:_fC,call:_fB.call,k:1,rf:_fB.hz,dx:_fB.call})}}
-    for(const _fE of _fu){const _fF=_fj.measureText(_fE.call).width+8*_fg;let _fG=Math.round(_fk(_fE.f)-_fF/2);_fG=Math.max(2,Math.min(_fe-_fF-2,_fG));let _fH=0;while(_fs.some(_fI=>_fI.row===_fH&&_fG<_fI.x1+4&&_fG+_fF>_fI.x0-4))_fH++;if(_fH>2)continue;_fs.push({row:_fH,x0:_fG,x1:_fG+_fF});
-      const _fJ=Math.round(9*_fg+_fH*(_fr+8*_fg)),_fK=_fr+5*_fg;WF.hits.push({x0:_fG-3*_fg,y0:_fJ-3*_fg,x1:_fG+_fF+3*_fg,y1:_fJ+_fK+3*_fg,it:_fE});_fj.fillStyle=_fE.k?"rgba(0,0,0,.5)":"rgba(0,0,0,.75)";_fj.fillRect(_fG,_fJ,_fF,_fK);_fj.strokeStyle=_fo(_fE.k?0.55:0.9);_fj.lineWidth=1;if(_fE.k)_fj.setLineDash([2*_fg,2*_fg]);_fj.strokeRect(_fG+0.5,_fJ+0.5,_fF-1,_fK-1);_fj.setLineDash([]);
-      _fj.fillStyle=_fo(_fE.k?0.7:1);_fj.fillText(_fE.call,_fG+4*_fg,_fJ+2.5*_fg)}}catch(_fL){}
+function drawWFOverlay(_fg,_fh,_fi,_fj){
+  const _fk=$("wfOv");if(!_fk)return;if(_fk.width!==_fg||_fk.height!==_fh){_fk.width=_fg;_fk.height=_fh}
+  const _fl=_fk.getContext("2d");_fl.clearRect(0,0,_fg,_fh);const _fm=_fn=>wfFr(_fn)*_fg;
+  const _fo=_fl.createLinearGradient(0,0,0,_fh);_fo.addColorStop(0,"rgba(0,0,0,0)");_fo.addColorStop(0.55,"rgba(0,0,0,0)");_fo.addColorStop(1,"rgba(0,0,0,.45)");_fl.fillStyle=_fo;_fl.fillRect(0,0,_fg,_fh);
+  const _fp=WFPAL.c[2],_fq=_fr=>"rgba("+_fp[0]+","+_fp[1]+","+_fp[2]+","+_fr+")";
+  const _fs=Math.round(_fm(dec.freq))+0.5;_fl.strokeStyle=_fq(0.55);_fl.lineWidth=Math.max(1,_fi);_fl.setLineDash([3*_fi,3*_fi]);_fl.beginPath();_fl.moveTo(_fs,0);_fl.lineTo(_fs,_fh);_fl.stroke();_fl.setLineDash([]);
+  _fl.fillStyle=_fq(0.95);_fl.beginPath();_fl.moveTo(_fs-5*_fi,0);_fl.lineTo(_fs+5*_fi,0);_fl.lineTo(_fs,7*_fi);_fl.closePath();_fl.fill();
+  try{const _ft=Math.round(10*_fi);_fl.font="600 "+_ft+"px "+(getComputedStyle(document.documentElement).getPropertyValue("--f-lcd")||"monospace");_fl.textBaseline="top";const _fu=[],_fv=performance.now(),_fw=[];WF.hits=[];
+    for(const _fx of SK.list){const _fy=_fx.msg,_fz=(_fy&&_fy.from)||_fx.from;if(!_fz||_fv-_fx.last>25000||_fx.f<WF.lo||_fx.f>WF.hi)continue;_fw.push({f:_fx.f,call:_fz+(_fy&&_fy.from&&_fy.guess&&!_fx.from?"?":""),k:0,sk:_fx,dx:_fz})}
+    if(rig.port&&rig.freq&&typeof CL!=="undefined"){const _fA=Date.now(),_fB=cwSide(),_fC=rig.pitch||600;for(const _fD of CL.spots.values()){if(_fA-_fD.t>5*60000)continue;const _fE=_fC+(_fD.hz-rig.freq)*_fB;if(_fE<WF.lo+20||_fE>WF.hi-20)continue;
+      if(_fw.some(_fF=>_fF.call.replace("?","")===_fD.call))continue;_fw.push({f:_fE,call:_fD.call,k:1,rf:_fD.hz,dx:_fD.call})}}
+    for(const _fG of _fw){const _fH=_fl.measureText(_fG.call).width+8*_fi;let _fI=Math.round(_fm(_fG.f)-_fH/2);_fI=Math.max(2,Math.min(_fg-_fH-2,_fI));let _fJ=0;while(_fu.some(_fK=>_fK.row===_fJ&&_fI<_fK.x1+4&&_fI+_fH>_fK.x0-4))_fJ++;if(_fJ>2)continue;_fu.push({row:_fJ,x0:_fI,x1:_fI+_fH});
+      const _fL=Math.round(9*_fi+_fJ*(_ft+8*_fi)),_fM=_ft+5*_fi;WF.hits.push({x0:_fI-3*_fi,y0:_fL-3*_fi,x1:_fI+_fH+3*_fi,y1:_fL+_fM+3*_fi,it:_fG});_fl.fillStyle=_fG.k?"rgba(0,0,0,.5)":"rgba(0,0,0,.75)";_fl.fillRect(_fI,_fL,_fH,_fM);_fl.strokeStyle=_fq(_fG.k?0.55:0.9);_fl.lineWidth=1;if(_fG.k)_fl.setLineDash([2*_fi,2*_fi]);_fl.strokeRect(_fI+0.5,_fL+0.5,_fH-1,_fM-1);_fl.setLineDash([]);
+      _fl.fillStyle=_fq(_fG.k?0.7:1);_fl.fillText(_fG.call,_fI+4*_fi,_fL+2.5*_fi)}}catch(_fN){}
 }
 function drawWFAxis(){
-  const _fM=$("wfAxis");_fM.textContent="";const _fN=WF.hi-WF.lo,_fO=!!(rig.port&&rig.freq);
-  for(let _fP=300;_fP<=1500;_fP+=200){const _fQ=document.createElement("span");_fQ.style.left=(wfFr(_fP)*100)+"%";
-    _fQ.textContent=_fO?(afToRf(_fP)/1000).toFixed(2):_fP+" Hz";_fM.appendChild(_fQ)}
-  $("wfInfo").textContent=_fO?(cwSide()>0?T("asse in kHz · lato superiore"):T("asse in kHz · lato inferiore")):T("asse in Hz audio");
+  const _fO=$("wfAxis");_fO.textContent="";const _fP=WF.hi-WF.lo,_fQ=!!(rig.port&&rig.freq);
+  for(let _fR=300;_fR<=1500;_fR+=200){const _fS=document.createElement("span");_fS.style.left=(wfFr(_fR)*100)+"%";
+    _fS.textContent=_fQ?(afToRf(_fR)/1000).toFixed(2):_fR+" Hz";_fO.appendChild(_fS)}
+  $("wfInfo").textContent=_fQ?(cwSide()>0?T("asse in kHz · lato superiore"):T("asse in kHz · lato inferiore")):T("asse in Hz audio");
 }
-function wfHit(_fR){if(mode!=="mic"||!WF.hits||!WF.hits.length)return null;const _fS=$("wf"),_fT=_fS.getBoundingClientRect();if(!_fT.width)return null;
-  const _fU=(_fR.clientX-_fT.left)*_fS.width/_fT.width,_fV=(_fR.clientY-_fT.top)*_fS.height/_fT.height;return (WF.hits.find(_fW=>_fU>=_fW.x0&&_fU<=_fW.x1&&_fV>=_fW.y0&&_fV<=_fW.y1)||{}).it||null}
-function wfPickCall(_fX){
-  try{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto una stazione."),"clic su stazione")}catch(_fY){}
-  try{if(hunt.on)huntStop()}catch(_fZ){}
-  const _ga=!!(rig.port&&rig.freq),_gb=_fX.sk,_gc=_fX.rf||(_ga?afToRf(_fX.f):0);
-  if(_ga&&_gc){if(_gb)tuneToSignal(Math.round(_gc/10)*10,_fX.f-(rig.pitch||600));else cat.setFreq(Math.round(_gc/10)*10)}
-  else if(dec&&_gb)dec.setFreq(Math.round(_fX.f/5)*5);
-  evLog("clic sul waterfall",_fX.dx);
+function wfHit(_fT){if(mode!=="mic"||!WF.hits||!WF.hits.length)return null;const _fU=$("wf"),_fV=_fU.getBoundingClientRect();if(!_fV.width)return null;
+  const _fW=(_fT.clientX-_fV.left)*_fU.width/_fV.width,_fX=(_fT.clientY-_fV.top)*_fU.height/_fV.height;return (WF.hits.find(_fY=>_fW>=_fY.x0&&_fW<=_fY.x1&&_fX>=_fY.y0&&_fX<=_fY.y1)||{}).it||null}
+function wfPickCall(_fZ){
+  try{if(chase.on)chaseStop(T("Inseguimento fermato: hai scelto una stazione."),"clic su stazione")}catch(_ga){}
+  try{if(hunt.on)huntStop()}catch(_gb){}
+  const _gc=!!(rig.port&&rig.freq),_gd=_fZ.sk,_ge=_fZ.rf||(_gc?afToRf(_fZ.f):0);
+  if(_gc&&_ge){if(_gd)tuneToSignal(Math.round(_ge/10)*10,_fZ.f-(rig.pitch||600));else cat.setFreq(Math.round(_ge/10)*10)}
+  else if(dec&&_gd)dec.setFreq(Math.round(_fZ.f/5)*5);
+  evLog("clic sul waterfall",_fZ.dx);
   if(typeof setDx==="function"&&typeof qp==="function"&&qp().op==="qso"){
-    const _gd=_gb&&_gb.msg?Object.assign({},_gb.msg,{rf:_gc}):{rf:_gc,f:_fX.f,db:_gb&&_gb.d?_gb.d.snr:20,text:""};setDx(_fX.dx,_gd,true)}
-  else if(typeof hqLookup==="function")hqLookup(_fX.dx);
+    const _gf=_gd&&_gd.msg?Object.assign({},_gd.msg,{rf:_ge}):{rf:_ge,f:_fZ.f,db:_gd&&_gd.d?_gd.d.snr:20,text:""};setDx(_fZ.dx,_gf,true)}
+  else if(typeof hqLookup==="function")hqLookup(_fZ.dx);
 }
-$("wf").addEventListener("mousemove",_ge=>{_ge.currentTarget.style.cursor=wfHit(_ge)?"pointer":""});
-$("wf").addEventListener("mouseleave",_gf=>{_gf.currentTarget.style.cursor=""});
-$("wf").addEventListener("click",_gg=>{
-  {const _gh=wfHit(_gg);if(_gh){wfPickCall(_gh);return}}
-  const _gi=_gg.currentTarget.getBoundingClientRect(),_gj=wfAf((_gg.clientX-_gi.left)/_gi.width);
-  const _gk=wfAnalyze();let _gl=_gj;if(_gk){let _gm=0;for(let _gn=0;_gn<_gk.sc.length;_gn++){const _go=(_gk.b0+_gn)*_gk.df;if(Math.abs(_go-_gj)<=40&&_gk.sc[_gn]>_gm){_gm=_gk.sc[_gn];_gl=_go}}}
-  if(rig.port&&rig.freq)tuneToSignal(afToRf(_gl),_gl-(rig.pitch||600));
-  else if(dec){dec.setFreq(Math.round(_gl/5)*5)}
+$("wf").addEventListener("mousemove",_gg=>{_gg.currentTarget.style.cursor=wfHit(_gg)?"pointer":""});
+$("wf").addEventListener("mouseleave",_gh=>{_gh.currentTarget.style.cursor=""});
+$("wf").addEventListener("click",_gi=>{
+  {const _gj=wfHit(_gi);if(_gj){wfPickCall(_gj);return}}
+  const _gk=_gi.currentTarget.getBoundingClientRect(),_gl=wfAf((_gi.clientX-_gk.left)/_gk.width);
+  const _gm=wfAnalyze();let _gn=_gl;if(_gm){let _go=0;for(let _gp=0;_gp<_gm.sc.length;_gp++){const _gq=(_gm.b0+_gp)*_gm.df;if(Math.abs(_gq-_gl)<=40&&_gm.sc[_gp]>_go){_go=_gm.sc[_gp];_gn=_gq}}}
+  if(rig.port&&rig.freq)tuneToSignal(afToRf(_gn),_gn-(rig.pitch||600));
+  else if(dec){dec.setFreq(Math.round(_gn/5)*5)}
 });
-function tuneToSignal(_gp,_gq){
-  cat.setFreq(_gp);if(Math.abs(_gq)<40)return;
-  const _gr=cwSide(),_gs=rig.pitch||600;
-  setTimeout(()=>{const _gt=wfAnalyze();if(!_gt)return;
-    const _gu=_gv=>{let _gw=0;for(let _gx=0;_gx<_gt.sc.length;_gx++){const _gy=(_gt.b0+_gx)*_gt.df;if(Math.abs(_gy-_gv)<=30)_gw=Math.max(_gw,_gt.sc[_gx])}return _gw};
-    const _gz=_gu(_gs),_gA=_gu(_gs+2*_gq);
-    if(_gA>4&&_gA>2*_gz){learnSide(-_gr);cat.setFreq(rig.freq+(-_gr)*2*_gq);msg(T("Lato CW della radio riconosciuto e memorizzato."))}
+function tuneToSignal(_gr,_gs){
+  cat.setFreq(_gr);if(Math.abs(_gs)<40)return;
+  const _gt=cwSide(),_gu=rig.pitch||600;
+  setTimeout(()=>{const _gv=wfAnalyze();if(!_gv)return;
+    const _gw=_gx=>{let _gy=0;for(let _gz=0;_gz<_gv.sc.length;_gz++){const _gA=(_gv.b0+_gz)*_gv.df;if(Math.abs(_gA-_gx)<=30)_gy=Math.max(_gy,_gv.sc[_gz])}return _gy};
+    const _gB=_gw(_gu),_gC=_gw(_gu+2*_gs);
+    if(_gC>4&&_gC>2*_gB){learnSide(-_gt);cat.setFreq(rig.freq+(-_gt)*2*_gs);msg(T("Lato CW della radio riconosciuto e memorizzato."))}
   },900);
 }
 const scan={on:false,map:null,lo:0,hi:0,res:50,step:1000,dial:0,steps:[],i:0,timer:0,restoreF:0,restoreFil:null,rows:[],acc:null};
-function scanCollect(_gB){
-  if(!scan.acc||!scan.collecting)return;const _gC=rig.pitch||600,_gD=scan.step/2+60;
-  for(let _gE=0;_gE<_gB.sc.length;_gE++){const _gF=(_gB.b0+_gE)*_gB.df;if(Math.abs(_gF-_gC)>_gD)continue;
-    const _gG=scan.dial+cwSide()*(_gF-_gC),_gH=Math.floor((_gG-scan.lo)/scan.res);if(_gH>=0&&_gH<scan.acc.length&&_gB.sc[_gE]>scan.acc[_gH])scan.acc[_gH]=_gB.sc[_gE]}
+function scanCollect(_gD){
+  if(!scan.acc||!scan.collecting)return;const _gE=rig.pitch||600,_gF=scan.step/2+60;
+  for(let _gG=0;_gG<_gD.sc.length;_gG++){const _gH=(_gD.b0+_gG)*_gD.df;if(Math.abs(_gH-_gE)>_gF)continue;
+    const _gI=scan.dial+cwSide()*(_gH-_gE),_gJ=Math.floor((_gI-scan.lo)/scan.res);if(_gJ>=0&&_gJ<scan.acc.length&&_gD.sc[_gG]>scan.acc[_gJ])scan.acc[_gJ]=_gD.sc[_gG]}
 }
-async function scanStart(_gI){
+async function scanStart(_gK){
   if(scan.on){scanStop(true);return}
-  scan.purpose=_gI||"scan";
-  const _gJ=curBand();if(!_gJ){msg(T("Porta la radio in una banda radioamatoriale: scansione e monitoraggio lavorano nel suo segmento CW."),true);return false}
+  scan.purpose=_gK||"scan";
+  const _gL=curBand();if(!_gL){msg(T("Porta la radio in una banda radioamatoriale: scansione e monitoraggio lavorano nel suo segmento CW."),true);return false}
   if(mode!=="mic"){msg(T("Avvia prima “Ascolta la radio”: scansione e monitoraggio usano l'audio USB."),true);return false}
-  scan.on=true;scan.lo=_gJ[1];scan.hi=_gJ[2];scan.restoreF=rig.freq;scan.restoreFil=rig.fil;
+  scan.on=true;scan.lo=_gL[1];scan.hi=_gL[2];scan.restoreF=rig.freq;scan.restoreFil=rig.fil;
   scan.step=rig.proto==="civ"?1000:400;
   if(rig.proto==="civ")cat.filter(1);
-  scan.steps=[];for(let _gK=scan.lo+scan.step/2;_gK<=scan.hi;_gK+=scan.step)scan.steps.push(Math.round(_gK));
+  scan.steps=[];for(let _gM=scan.lo+scan.step/2;_gM<=scan.hi;_gM+=scan.step)scan.steps.push(Math.round(_gM));
   scan.acc=new Float32Array(Math.ceil((scan.hi-scan.lo)/scan.res));scan.i=0;
   if(dec)dec.mute=true;
   if(scan.purpose==="scan"){$("scanBtn").textContent=T("■ Ferma scansione");$("huntBtn").disabled=true}else $("scanBtn").disabled=true;
@@ -2324,17 +2325,17 @@ function scanNext(){
   $("scanInfo").textContent=T("scansione {0}% · {1} kHz",Math.round(scan.i/scan.steps.length*100),(scan.dial/1000).toFixed(1));
   scan.timer=setTimeout(()=>{WF.avg=null;scan.timer=setTimeout(()=>{scan.collecting=true;scan.timer=setTimeout(()=>{scan.collecting=false;scan.i++;drawMap();scanNext()},600)},150)},250);
 }
-function scanStop(_gL){
-  clearTimeout(scan.timer);const _gM=scan.on,_gN=scan.purpose;scan.on=false;scan.collecting=false;
-  if(_gM){if(scan.restoreFil&&rig.proto==="civ")cat.filter(scan.restoreFil);if(_gN==="scan")cat.setFreq(scan.restoreF)}
+function scanStop(_gN){
+  clearTimeout(scan.timer);const _gO=scan.on,_gP=scan.purpose;scan.on=false;scan.collecting=false;
+  if(_gO){if(scan.restoreFil&&rig.proto==="civ")cat.filter(scan.restoreFil);if(_gP==="scan")cat.setFreq(scan.restoreF)}
   if(dec){dec.mute=false;dec.unlock()}
   $("scanBtn").textContent=T("⌁ Scansiona banda CW");$("scanBtn").disabled=!rig.port||hunt.on;$("huntBtn").disabled=!rig.port;
-  if(_gM&&scan.acc){scan.rows.unshift(scan.acc);if(scan.rows.length>6)scan.rows.pop();drawMap();listSignals()}
-  $("scanInfo").textContent=_gL?T("scansione interrotta"):T("scansione completata · clicca un segnale per sintonizzarlo");
+  if(_gO&&scan.acc){scan.rows.unshift(scan.acc);if(scan.rows.length>6)scan.rows.pop();drawMap();listSignals()}
+  $("scanInfo").textContent=_gN?T("scansione interrotta"):T("scansione completata · clicca un segnale per sintonizzarlo");
 }
 const hunt={cand:new Map(),on:false,visited:new Map(),target:null,phase:"",t0:0,lastAct:0,expect:0,heard:false,interest:false,tick:0,pickAt:0,emptySince:0,restoreFil:null,n:0};
 const HUNT={firstWait:6000,boring:20000,quiet:10000,maxDwell:300000,cool:180000,emptyStep:3000,minDb:11};
-const hKey=_gO=>Math.round(_gO/150);
+const hKey=_gQ=>Math.round(_gQ/150);
 function huntStart(){
   if(hunt.on){huntStop(T("Monitoraggio fermato."));return}
   if(!rig.port){msg(T("Collega il CAT per usare il monitoraggio."),true);return}
@@ -2347,79 +2348,79 @@ function huntStart(){
   msg(T("Monitoraggio avviato: vado sul segnale CW più forte del waterfall."));
 }
 function huntPeaks(){
-  const _gP=wfAnalyze();if(!_gP)return [];const _gQ=curBand(),_gR=[],_gS=Date.now();
-  for(let _gT=1;_gT<_gP.sc.length-1;_gT++){const _gU=_gP.sc[_gT];if(_gU<_gP.sc[_gT-1]||_gU<_gP.sc[_gT+1])continue;const _gV=10*Math.log10(Math.max(1e-6,_gU));if(_gV<HUNT.minDb)continue;
-    const _gW=(_gP.b0+_gT)*_gP.df;if(_gW<280||_gW>1450)continue;const _gX=afToRf(_gW);
-    if(_gQ&&(_gX<_gQ[1]||_gX>_gQ[2]))continue;
-    if(_gS-(hunt.visited.get(hKey(_gX))||0)<HUNT.cool)continue;
-    _gR.push({rf:_gX,af:_gW,db:_gV})}
-  _gR.sort((_gY,_gZ)=>_gZ.db-_gY.db);
-  const _ha=[];for(const _hb of _gR)if(!_ha.some(_hc=>Math.abs(_hc.rf-_hb.rf)<120))_ha.push(_hb);
-  return _ha;
+  const _gR=wfAnalyze();if(!_gR)return [];const _gS=curBand(),_gT=[],_gU=Date.now();
+  for(let _gV=1;_gV<_gR.sc.length-1;_gV++){const _gW=_gR.sc[_gV];if(_gW<_gR.sc[_gV-1]||_gW<_gR.sc[_gV+1])continue;const _gX=10*Math.log10(Math.max(1e-6,_gW));if(_gX<HUNT.minDb)continue;
+    const _gY=(_gR.b0+_gV)*_gR.df;if(_gY<280||_gY>1450)continue;const _gZ=afToRf(_gY);
+    if(_gS&&(_gZ<_gS[1]||_gZ>_gS[2]))continue;
+    if(_gU-(hunt.visited.get(hKey(_gZ))||0)<HUNT.cool)continue;
+    _gT.push({rf:_gZ,af:_gY,db:_gX})}
+  _gT.sort((_ha,_hb)=>_hb.db-_ha.db);
+  const _hc=[];for(const _hd of _gT)if(!_hc.some(_he=>Math.abs(_he.rf-_hd.rf)<120))_hc.push(_hd);
+  return _hc;
 }
 function huntPick(){
-  const _hd=Date.now(),_he=curBand();if(!_he){huntStop(T("Monitoraggio fermato: la radio è fuori dalle bande radioamatoriali."));return}
-  const _hf=huntPeaks(),_hg=new Map();
-  for(const _hh of _hf){const _hi=hKey(_hh.rf),_hj=hunt.cand.get(_hi)||hunt.cand.get(_hi-1)||hunt.cand.get(_hi+1);_hg.set(_hi,{..._hh,n:(_hj?_hj.n:0)+1})}
-  hunt.cand=_hg;
-  const _hk=[..._hg.values()].filter(_hl=>_hl.n>=3).sort((_hm,_hn)=>_hn.db-_hm.db);
-  if(_hk.length){const _ho=_hk[0];hunt.cand=new Map();hunt.target=_ho;hunt.visited.set(hKey(_ho.rf),_hd);hunt.n++;hunt.emptySince=0;
-    const _hp=Math.round(_ho.rf/10)*10;hunt.expect=_hp;hunt.setAt=_hd;hunt.off=0;cat.setFreq(_hp);
-    hunt.phase="dwell";hunt.t0=_hd;hunt.lastAct=_hd;hunt.heard=false;hunt.interest=false;return}
-  if(!hunt.emptySince)hunt.emptySince=_hd;
+  const _hf=Date.now(),_hg=curBand();if(!_hg){huntStop(T("Monitoraggio fermato: la radio è fuori dalle bande radioamatoriali."));return}
+  const _hh=huntPeaks(),_hi=new Map();
+  for(const _hj of _hh){const _hk=hKey(_hj.rf),_hl=hunt.cand.get(_hk)||hunt.cand.get(_hk-1)||hunt.cand.get(_hk+1);_hi.set(_hk,{..._hj,n:(_hl?_hl.n:0)+1})}
+  hunt.cand=_hi;
+  const _hm=[..._hi.values()].filter(_hn=>_hn.n>=3).sort((_ho,_hp)=>_hp.db-_ho.db);
+  if(_hm.length){const _hq=_hm[0];hunt.cand=new Map();hunt.target=_hq;hunt.visited.set(hKey(_hq.rf),_hf);hunt.n++;hunt.emptySince=0;
+    const _hr=Math.round(_hq.rf/10)*10;hunt.expect=_hr;hunt.setAt=_hf;hunt.off=0;cat.setFreq(_hr);
+    hunt.phase="dwell";hunt.t0=_hf;hunt.lastAct=_hf;hunt.heard=false;hunt.interest=false;return}
+  if(!hunt.emptySince)hunt.emptySince=_hf;
   $("scanInfo").textContent=T("monitoraggio: nessun segnale nuovo nel waterfall, cerco…");
-  if(_hd-hunt.emptySince>HUNT.emptyStep){hunt.cand=new Map();let _hq=(rig.freq||_he[1])+1000;if(_hq>_he[2]-300)_hq=_he[1]+500;_hq=Math.round(_hq/10)*10;hunt.expect=_hq;hunt.setAt=_hd;hunt.off=0;cat.setFreq(_hq);WF.avg=null;hunt.emptySince=_hd}
-  hunt.pickAt=_hd+500;
+  if(_hf-hunt.emptySince>HUNT.emptyStep){hunt.cand=new Map();let _hs=(rig.freq||_hg[1])+1000;if(_hs>_hg[2]-300)_hs=_hg[1]+500;_hs=Math.round(_hs/10)*10;hunt.expect=_hs;hunt.setAt=_hf;hunt.off=0;cat.setFreq(_hs);WF.avg=null;hunt.emptySince=_hf}
+  hunt.pickAt=_hf+500;
 }
 function huntInteresting(){
-  const _hr=rig.pitch||dec.freq;
-  return MSG.list.some(_hs=>_hs.t>=hunt.t0-1500&&Math.abs(_hs.f-_hr)<80&&(_hs.from||/^(CQ|QSO|Rapporto|Saluti)/.test(_hs.type||"")||(_hs.text||"").split(" ").some(isCall)))}
-function huntTick(_ht){
-  if(!hunt.on||!dec)return;if(_ht-hunt.tick<500)return;hunt.tick=_ht;const _hu=Date.now();
-  if(hunt.expect&&rig.freq&&Math.abs(rig.freq-hunt.expect)>150&&_hu-(hunt.setAt||0)>3000){if(++hunt.off>=3){huntStop(T("Monitoraggio fermato: la frequenza è stata cambiata a mano."));return}}else hunt.off=0;
-  if(hunt.phase==="pick"){if(_hu>=hunt.pickAt)huntPick();return}
-  const _hv=rig.pitch||dec.freq,_hw=_hx=>_hx.key||(_hx.hops-_hx.lastMarkHop)*_hx.msHop<1200;
-  if(_hw(dec)||SK.list.some(_hy=>Math.abs(_hy.f-_hv)<70&&_hw(_hy.d))){hunt.lastAct=_hu;hunt.heard=true}
+  const _ht=rig.pitch||dec.freq;
+  return MSG.list.some(_hu=>_hu.t>=hunt.t0-1500&&Math.abs(_hu.f-_ht)<80&&(_hu.from||/^(CQ|QSO|Rapporto|Saluti)/.test(_hu.type||"")||(_hu.text||"").split(" ").some(isCall)))}
+function huntTick(_hv){
+  if(!hunt.on||!dec)return;if(_hv-hunt.tick<500)return;hunt.tick=_hv;const _hw=Date.now();
+  if(hunt.expect&&rig.freq&&Math.abs(rig.freq-hunt.expect)>150&&_hw-(hunt.setAt||0)>3000){if(++hunt.off>=3){huntStop(T("Monitoraggio fermato: la frequenza è stata cambiata a mano."));return}}else hunt.off=0;
+  if(hunt.phase==="pick"){if(_hw>=hunt.pickAt)huntPick();return}
+  const _hx=rig.pitch||dec.freq,_hy=_hz=>_hz.key||(_hz.hops-_hz.lastMarkHop)*_hz.msHop<1200;
+  if(_hy(dec)||SK.list.some(_hA=>Math.abs(_hA.f-_hx)<70&&_hy(_hA.d))){hunt.lastAct=_hw;hunt.heard=true}
   if(!hunt.interest&&huntInteresting())hunt.interest=true;
-  const _hz=Math.round((_hu-hunt.t0)/1000);
-  $("scanInfo").textContent=T("monitoraggio: {0} kHz ({1} dB) · {2} s · {3}",(hunt.expect/1000).toFixed(2),Math.round(hunt.target.db),_hz,hunt.interest?T("QSO o nominativi: resto"):hunt.heard?T("decodifico…"):T("attendo segnali"));
-  const _hA=(!hunt.heard&&_hu-hunt.t0>HUNT.firstWait)||(!hunt.interest&&_hu-hunt.t0>HUNT.boring)||(hunt.heard&&_hu-hunt.lastAct>HUNT.quiet)||_hu-hunt.t0>HUNT.maxDwell;
-  if(_hA){hunt.phase="pick";hunt.pickAt=_hu+1200;WF.avg=null}
+  const _hB=Math.round((_hw-hunt.t0)/1000);
+  $("scanInfo").textContent=T("monitoraggio: {0} kHz ({1} dB) · {2} s · {3}",(hunt.expect/1000).toFixed(2),Math.round(hunt.target.db),_hB,hunt.interest?T("QSO o nominativi: resto"):hunt.heard?T("decodifico…"):T("attendo segnali"));
+  const _hC=(!hunt.heard&&_hw-hunt.t0>HUNT.firstWait)||(!hunt.interest&&_hw-hunt.t0>HUNT.boring)||(hunt.heard&&_hw-hunt.lastAct>HUNT.quiet)||_hw-hunt.t0>HUNT.maxDwell;
+  if(_hC){hunt.phase="pick";hunt.pickAt=_hw+1200;WF.avg=null}
 }
-function huntStop(_hB){
-  const _hC=hunt.on;hunt.on=false;hunt.phase="";hunt.target=null;
-  if(_hC&&hunt.restoreFil&&rig.proto==="civ")cat.filter(hunt.restoreFil);
+function huntStop(_hD){
+  const _hE=hunt.on;hunt.on=false;hunt.phase="";hunt.target=null;
+  if(_hE&&hunt.restoreFil&&rig.proto==="civ")cat.filter(hunt.restoreFil);
   $("huntBtn").setAttribute("aria-pressed","false");$("huntBtn").textContent=T("◎ Monitoraggio");$("scanBtn").disabled=!rig.port;$("huntBtn").disabled=!rig.port;
-  if(_hC){$("scanInfo").textContent=T("monitoraggio fermo");if(_hB)msg(_hB)}
+  if(_hE){$("scanInfo").textContent=T("monitoraggio fermo");if(_hD)msg(_hD)}
 }
 function drawMap(){
-  const _hD=$("bmap");if(!_hD.clientWidth||!scan.acc)return;const [_hE,_hF]=fit(_hD),_hG=_hD.getContext("2d");
-  _hG.fillStyle=WFPAL.bg;_hG.fillRect(0,0,_hE,_hF);
-  const _hH=scan.on?[scan.acc,...scan.rows]:scan.rows,_hI=Math.max(6,Math.floor(_hF/Math.max(4,_hH.length)));
-  _hH.forEach((_hJ,_hK)=>{const _hL=_hK*_hI;for(let _hM=0;_hM<_hE;_hM++){const _hN=Math.floor(_hM/_hE*_hJ.length);let _hO=0;for(let _hP=_hN;_hP<=Math.min(_hJ.length-1,_hN+1);_hP++)_hO=Math.max(_hO,_hJ[_hP]);
-    const _hQ=10*Math.log10(Math.max(1e-6,_hO));if(_hQ<6)continue;const _hR=wfColor(Math.min(1,(_hQ-6)/14));_hG.fillStyle="rgb("+_hR+")";_hG.fillRect(_hM,_hL,1,_hI-1)}});
-  if(scan.on){const _hS=(scan.dial-scan.lo)/(scan.hi-scan.lo)*_hE;_hG.fillStyle="rgba(255,255,255,.6)";_hG.fillRect(_hS,0,2,_hI)}
-  const _hT=$("mapAxis");_hT.textContent="";const _hU=scan.hi-scan.lo,_hV=_hU>60000?10000:5000;
-  for(let _hW=Math.ceil(scan.lo/_hV)*_hV;_hW<=scan.hi;_hW+=_hV){const _hX=document.createElement("span");_hX.style.left=((_hW-scan.lo)/_hU*100)+"%";_hX.textContent=(_hW/1000).toFixed(0);_hT.appendChild(_hX)}
+  const _hF=$("bmap");if(!_hF.clientWidth||!scan.acc)return;const [_hG,_hH]=fit(_hF),_hI=_hF.getContext("2d");
+  _hI.fillStyle=WFPAL.bg;_hI.fillRect(0,0,_hG,_hH);
+  const _hJ=scan.on?[scan.acc,...scan.rows]:scan.rows,_hK=Math.max(6,Math.floor(_hH/Math.max(4,_hJ.length)));
+  _hJ.forEach((_hL,_hM)=>{const _hN=_hM*_hK;for(let _hO=0;_hO<_hG;_hO++){const _hP=Math.floor(_hO/_hG*_hL.length);let _hQ=0;for(let _hR=_hP;_hR<=Math.min(_hL.length-1,_hP+1);_hR++)_hQ=Math.max(_hQ,_hL[_hR]);
+    const _hS=10*Math.log10(Math.max(1e-6,_hQ));if(_hS<6)continue;const _hT=wfColor(Math.min(1,(_hS-6)/14));_hI.fillStyle="rgb("+_hT+")";_hI.fillRect(_hO,_hN,1,_hK-1)}});
+  if(scan.on){const _hU=(scan.dial-scan.lo)/(scan.hi-scan.lo)*_hG;_hI.fillStyle="rgba(255,255,255,.6)";_hI.fillRect(_hU,0,2,_hK)}
+  const _hV=$("mapAxis");_hV.textContent="";const _hW=scan.hi-scan.lo,_hX=_hW>60000?10000:5000;
+  for(let _hY=Math.ceil(scan.lo/_hX)*_hX;_hY<=scan.hi;_hY+=_hX){const _hZ=document.createElement("span");_hZ.style.left=((_hY-scan.lo)/_hW*100)+"%";_hZ.textContent=(_hY/1000).toFixed(0);_hV.appendChild(_hZ)}
 }
-function signalsOf(_hY){const _hZ=[];
-  for(let _ia=1;_ia<_hY.length-1;_ia++){const _ib=10*Math.log10(Math.max(1e-6,_hY[_ia]));if(_ib>=10&&_hY[_ia]>=_hY[_ia-1]&&_hY[_ia]>=_hY[_ia+1])_hZ.push([scan.lo+(_ia+0.5)*scan.res,_ib])}
-  const _ic=[];for(const _id of _hZ){const _ie=_ic[_ic.length-1];if(_ie&&_id[0]-_ie[0]<150){if(_id[1]>_ie[1]){_ie[0]=_id[0];_ie[1]=_id[1]}}else _ic.push(_id.slice())}
-  return _ic}
-function strongest(){const _if=scan.rows[0];if(!_if)return null;const _ig=signalsOf(_if).sort((_ih,_ii)=>_ii[1]-_ih[1]);return _ig[0]||null}
+function signalsOf(_ia){const _ib=[];
+  for(let _ic=1;_ic<_ia.length-1;_ic++){const _id=10*Math.log10(Math.max(1e-6,_ia[_ic]));if(_id>=10&&_ia[_ic]>=_ia[_ic-1]&&_ia[_ic]>=_ia[_ic+1])_ib.push([scan.lo+(_ic+0.5)*scan.res,_id])}
+  const _ie=[];for(const _if of _ib){const _ig=_ie[_ie.length-1];if(_ig&&_if[0]-_ig[0]<150){if(_if[1]>_ig[1]){_ig[0]=_if[0];_ig[1]=_if[1]}}else _ie.push(_if.slice())}
+  return _ie}
+function strongest(){const _ih=scan.rows[0];if(!_ih)return null;const _ii=signalsOf(_ih).sort((_ij,_ik)=>_ik[1]-_ij[1]);return _ii[0]||null}
 function listSignals(){
-  const _ij=$("sigList");_ij.textContent="";const _ik=scan.rows[0];if(!_ik)return;const _il=[];
-  for(let _im=1;_im<_ik.length-1;_im++){const _in=10*Math.log10(Math.max(1e-6,_ik[_im]));if(_in>=10&&_ik[_im]>=_ik[_im-1]&&_ik[_im]>=_ik[_im+1])_il.push([scan.lo+(_im+0.5)*scan.res,_in])}
-  const _io=[];for(const _ip of _il){const _iq=_io[_io.length-1];if(_iq&&_ip[0]-_iq[0]<150){if(_ip[1]>_iq[1]){_iq[0]=_ip[0];_iq[1]=_ip[1]}}else _io.push(_ip.slice())}
-  _io.sort((_ir,_is)=>_is[1]-_ir[1]);const _it=_io.slice(0,16).sort((_iu,_iv)=>_iu[0]-_iv[0]);
-  if(!_it.length){_ij.textContent=T("Nessuna stazione CW sopra il rumore in questa scansione.");return}
-  for(const [_iw,_ix] of _it){const _iy=document.createElement("button");_iy.type="button";const _iz=document.createElement("b");_iz.textContent=(_iw/1000).toFixed(2);
-    _iy.append(_iz," · "+Math.round(_ix)+" dB");
-    _iy.onclick=()=>{if(hunt.on)huntStop(T("Monitoraggio fermato: hai scelto una stazione."));cat.setFreq(Math.round(_iw/10)*10)};_ij.appendChild(_iy)}
+  const _il=$("sigList");_il.textContent="";const _im=scan.rows[0];if(!_im)return;const _in=[];
+  for(let _io=1;_io<_im.length-1;_io++){const _ip=10*Math.log10(Math.max(1e-6,_im[_io]));if(_ip>=10&&_im[_io]>=_im[_io-1]&&_im[_io]>=_im[_io+1])_in.push([scan.lo+(_io+0.5)*scan.res,_ip])}
+  const _iq=[];for(const _ir of _in){const _is=_iq[_iq.length-1];if(_is&&_ir[0]-_is[0]<150){if(_ir[1]>_is[1]){_is[0]=_ir[0];_is[1]=_ir[1]}}else _iq.push(_ir.slice())}
+  _iq.sort((_it,_iu)=>_iu[1]-_it[1]);const _iv=_iq.slice(0,16).sort((_iw,_ix)=>_iw[0]-_ix[0]);
+  if(!_iv.length){_il.textContent=T("Nessuna stazione CW sopra il rumore in questa scansione.");return}
+  for(const [_iy,_iz] of _iv){const _iA=document.createElement("button");_iA.type="button";const _iB=document.createElement("b");_iB.textContent=(_iy/1000).toFixed(2);
+    _iA.append(_iB," · "+Math.round(_iz)+" dB");
+    _iA.onclick=()=>{if(hunt.on)huntStop(T("Monitoraggio fermato: hai scelto una stazione."));cat.setFreq(Math.round(_iy/10)*10)};_il.appendChild(_iA)}
 }
 $("scanBtn").onclick=()=>scanStart("scan");$("huntBtn").onclick=huntStart;
-$("bmap").addEventListener("click",_iA=>{if(!scan.rows.length||!rig.port)return;const _iB=_iA.currentTarget.getBoundingClientRect(),_iC=scan.lo+(_iA.clientX-_iB.left)/_iB.width*(scan.hi-scan.lo);
-  const _iD=scan.rows[0];let _iE=_iC,_iF=0;for(let _iG=0;_iG<_iD.length;_iG++){const _iH=scan.lo+(_iG+0.5)*scan.res;if(Math.abs(_iH-_iC)<=300&&_iD[_iG]>_iF){_iF=_iD[_iG];_iE=_iH}}cat.setFreq(Math.round(_iE/10)*10)});
+$("bmap").addEventListener("click",_iC=>{if(!scan.rows.length||!rig.port)return;const _iD=_iC.currentTarget.getBoundingClientRect(),_iE=scan.lo+(_iC.clientX-_iD.left)/_iD.width*(scan.hi-scan.lo);
+  const _iF=scan.rows[0];let _iG=_iE,_iH=0;for(let _iI=0;_iI<_iF.length;_iI++){const _iJ=scan.lo+(_iI+0.5)*scan.res;if(Math.abs(_iJ-_iE)<=300&&_iF[_iI]>_iH){_iH=_iF[_iI];_iG=_iJ}}cat.setFreq(Math.round(_iG/10)*10)});
 </script>
 <script>
 const SK={list:[],cand:new Map(),last:0,max:10};
@@ -4549,7 +4550,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.24";
+const WEB_VERSION="1.12.25";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
