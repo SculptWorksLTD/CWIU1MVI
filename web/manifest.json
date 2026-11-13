@@ -1,9 +1,9 @@
 {
-  "web": "1.12.26",
+  "web": "1.12.27",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.26.html",
-  "size": 776236,
-  "sha256": "a921b1943257e8b9f104cfc57e3a02ea39d4d5d2b71dcbe2d88a75bd1e923ead",
-  "date": "2026-11-13 13:02 UTC",
-  "notes": "Lo stato di scansione, monitoraggio e inseguimento ora è nell'intestazione del pannello: il waterfall non si sposta più"
+  "file": "cwiu1mvi-1.12.27.html",
+  "size": 776337,
+  "sha256": "ccce2a4608235c42c1c51a01624759bb0b17f09bb6a60832e0abb1a653c1ce66",
+  "date": "2026-11-13 21:36 UTC",
+  "notes": "Inseguimento: prova a confronto per non restare 60 s su frequenze dove qui non si sente nessun tasto"
 }
