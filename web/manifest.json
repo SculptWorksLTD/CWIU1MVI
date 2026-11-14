@@ -1,9 +1,9 @@
 {
-  "web": "1.12.27",
+  "web": "1.12.28",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.27.html",
-  "size": 776337,
-  "sha256": "ccce2a4608235c42c1c51a01624759bb0b17f09bb6a60832e0abb1a653c1ce66",
-  "date": "2026-11-13 21:36 UTC",
-  "notes": "Inseguimento: prova a confronto per non restare 60 s su frequenze dove qui non si sente nessun tasto"
+  "file": "cwiu1mvi-1.12.28.html",
+  "size": 783103,
+  "sha256": "518bdd13bbe09f92eefa7d81eac558df62bac5d3febb2657f872dc158bd880e3",
+  "date": "2026-11-14 07:12 UTC",
+  "notes": "Stampo: a fine visita il motore cerca il nominativo dello spot nell'audio anche se non è stato letto; prova a confronto chiusa"
 }
