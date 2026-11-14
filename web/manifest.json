@@ -1,9 +1,9 @@
 {
-  "web": "1.12.29",
+  "web": "1.12.30",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.29.html",
-  "size": 784675,
-  "sha256": "ef86f453448b7999afc97d81857180eae7c032dfdd2c99d2aa1ec61537f4ee4d",
-  "date": "2026-11-14 09:17 UTC",
-  "notes": "Misura dei candidati da spottare (solo diario, nessuno spot inviato)"
+  "file": "cwiu1mvi-1.12.30.html",
+  "size": 841932,
+  "sha256": "1b75b6fa078d44ecb7c74d23f027d90708e3541217b9d431f3c4431cca03ef10",
+  "date": "2026-11-14 14:17 UTC",
+  "notes": "Scheda Skimmer: chiavetta RTL-SDR sulle fette CW (serve l'app 1.2.18)"
 }

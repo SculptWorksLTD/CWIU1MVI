@@ -330,9 +330,16 @@ function setupPermissions(_bF) {
     if (_bT < _bM.length) { try { fs.writeFileSync(path.join(app.getPath('userData'), 'last-port.json'), JSON.stringify({ name: _bM[_bT].portName || '' })); } catch {} }
     _bJ(_bT < _bM.length ? _bM[_bT].portId : '');
   });
-  _bF.setPermissionCheckHandler((_bU, _bV) => ['serial', 'media', 'clipboard-sanitized-write'].includes(_bV));
-  _bF.setPermissionRequestHandler((_bW, _bX, _bY) => _bY(['media', 'clipboard-sanitized-write'].includes(_bX)));
-  _bF.setDevicePermissionHandler((_bZ) => _bZ.deviceType === 'serial');
+  const _bU = [[0x0bda, 0x2832], [0x0bda, 0x2838]];
+  const _bV = (_bW) => _bW && _bU.some(([_bX, _bY]) => _bW.vendorId === _bX && _bW.productId === _bY);
+  _bF.on('select-usb-device', (_bZ, _ca, _cb) => {
+    _bZ.preventDefault();
+    const _cc = (_ca.deviceList || []).find(_bV);
+    _cb(_cc ? _cc.deviceId : undefined);
+  });
+  _bF.setPermissionCheckHandler((_cd, _ce) => ['serial', 'media', 'clipboard-sanitized-write', 'usb'].includes(_ce));
+  _bF.setPermissionRequestHandler((_cf, _cg, _ch) => _ch(['media', 'clipboard-sanitized-write'].includes(_cg)));
+  _bF.setDevicePermissionHandler((_ci) => _ci.deviceType === 'serial' || (_ci.deviceType === 'usb' && _bV(_ci.device)));
 }
 const LANGS = [['it', 'Italiano'], ['en', 'English'], ['fr', 'Français'], ['de', 'Deutsch'], ['es', 'Español'], ['pt', 'Português'], ['ja', '日本語'], ['ru', 'Русский'], ['ar', 'العربية'], ['zh', '中文（简体）']];
 const MT = {
@@ -493,33 +500,33 @@ function initLang() {
   try { LANG = JSON.parse(fs.readFileSync(langFile(), 'utf8')).lang; } catch { LANG = (app.getLocale() || 'it').slice(0, 2); }
   if (!MT[LANG]) LANG = 'en';
 }
-const L = (_ca) => (MT[LANG] && MT[LANG][_ca]) || MT.it[_ca] || _ca;
-ipcMain.on('set-lang', (_cb, _cc) => {
-  if (!MT[_cc] || _cc === LANG) return;
-  LANG = _cc; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_cc })); } catch {}
+const L = (_cj) => (MT[LANG] && MT[LANG][_cj]) || MT.it[_cj] || _cj;
+ipcMain.on('set-lang', (_ck, _cl) => {
+  if (!MT[_cl] || _cl === LANG) return;
+  LANG = _cl; try { fs.writeFileSync(langFile(), JSON.stringify({ lang:_cl })); } catch {}
   buildMenu();
 });
 let ui = { listening: false, cat: false, cwOk: false, locked: false, shown: {}, style: 'campo', hunting: false, rec: false };
-const send = (_cd) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _cd); } };
-const clickIn = (_ce) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_ce)}).click()`, true).catch(() => {}); } };
+const send = (_cm) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.send('menu', _cm); } };
+const clickIn = (_cn) => { if (win && !win.isDestroyed()) { win.show(); win.webContents.executeJavaScript(`document.getElementById(${JSON.stringify(_cn)}).click()`, true).catch(() => {}); } };
 const PANELS = ['log', 'tune', 'rig', 'c7100'];
 const STYLES = ['campo', 'notte', 'valvole', 'chiaro', 'fosfori', 'contrasto'];
 const BANDS = ['160', '80', '60', '40', '30', '20', '17', '15', '12', '10', '6', '2', '70cm'];
 let awakeId = -1;
-function keepAwake(_cf) {
-  if (_cf && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
-  else if (!_cf && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
+function keepAwake(_co) {
+  if (_co && awakeId < 0) awakeId = powerSaveBlocker.start('prevent-app-suspension');
+  else if (!_co && awakeId >= 0) { try { powerSaveBlocker.stop(awakeId); } catch {} awakeId = -1; }
 }
-ipcMain.on('app-state', (_cg, _ch) => { if (_ch && typeof _ch === 'object') { ui = { ...ui, ..._ch }; keepAwake(!!ui.listening); buildMenu(); } });
+ipcMain.on('app-state', (_cp, _cq) => { if (_cq && typeof _cq === 'object') { ui = { ...ui, ..._cq }; keepAwake(!!ui.listening); buildMenu(); } });
 function buildMenu() {
-  const _ci = { label: L('about'), click: () => send('welcome') };
-  const _cj = { label: L('checkUpd'), click: () => send('update') };
-  const _ck = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
-  const _cl = [
+  const _cr = { label: L('about'), click: () => send('welcome') };
+  const _cs = { label: L('checkUpd'), click: () => send('update') };
+  const _ct = { label: L('prefs'), accelerator: 'CmdOrCtrl+,', click: () => send('prefs') };
+  const _cu = [
     ...(isMac ? [{
       label: 'CWIU1MVI',
       submenu: [
-        _ci, _cj, { type: 'separator' }, _ck,
+        _cr, _cs, { type: 'separator' }, _ct,
         { type: 'separator' },
         { role: 'services', label: L('services') },
         { type: 'separator' },
@@ -536,7 +543,7 @@ function buildMenu() {
         { label: L('exportAdif'), accelerator: 'CmdOrCtrl+E', click: () => send('adif') },
         { label: L('openLog'), accelerator: 'CmdOrCtrl+Shift+O', click: () => send('logs') },
         { type: 'separator' },
-        ...(isMac ? [] : [_ck, { type: 'separator' }]),
+        ...(isMac ? [] : [_ct, { type: 'separator' }]),
         isMac ? { role: 'close', label: L('closeWin') } : { role: 'quit', label: L('quit') },
       ],
     },
@@ -560,7 +567,7 @@ function buildMenu() {
         { label: L('scan'), enabled: !!ui.cat && !!ui.listening, click: () => send('scan') },
         { label: L('hunt'), type: 'checkbox', checked: !!ui.hunting, accelerator: 'CmdOrCtrl+Shift+F', enabled: !!ui.cat && !!ui.listening, click: () => send('hunt') },
         { label: L('chase'), type: 'checkbox', checked: !!ui.chasing, accelerator: 'CmdOrCtrl+Shift+S', enabled: !!ui.cat && !!ui.listening, click: () => send('chase') },
-        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_cm) => ({ label: /cm/.test(_cm) ? _cm.replace('cm', ' cm') : `${_cm} m`, click: () => send('band:' + _cm) })) },
+        { label: L('band'), enabled: !!ui.cat, submenu: BANDS.map((_cv) => ({ label: /cm/.test(_cv) ? _cv.replace('cm', ' cm') : `${_cv} m`, click: () => send('band:' + _cv) })) },
         { type: 'separator' },
         { label: ui.rec ? L('recStop') : L('rec'), accelerator: 'CmdOrCtrl+Shift+R', enabled: !!ui.listening || !!ui.rec, click: () => send('rec') },
       ],
@@ -572,10 +579,10 @@ function buildMenu() {
         { label: L('vSta'), accelerator: 'CmdOrCtrl+2', click: () => send('view:sta') },
         { label: 'Cluster', accelerator: 'CmdOrCtrl+3', click: () => send('view:cl') },
         { type: 'separator' },
-        { label: L('style'), submenu: STYLES.map((_cn) => ({ label: L('st_' + _cn), type: 'radio', checked: ui.style === _cn, click: () => send('style:' + _cn) })) },
-        { label: L('language'), submenu: LANGS.map(([_co, _cp]) => ({ label: _cp, type: 'radio', checked: LANG === _co, click: () => send('lang:' + _co) })) },
+        { label: L('style'), submenu: STYLES.map((_cw) => ({ label: L('st_' + _cw), type: 'radio', checked: ui.style === _cw, click: () => send('style:' + _cw) })) },
+        { label: L('language'), submenu: LANGS.map(([_cx, _cy]) => ({ label: _cy, type: 'radio', checked: LANG === _cx, click: () => send('lang:' + _cx) })) },
         { type: 'separator' },
-        ...PANELS.map((_cq) => ({ label: L('p_' + _cq), type: 'checkbox', checked: ui.shown[_cq] !== false, click: () => send('mod:' + _cq) })),
+        ...PANELS.map((_cz) => ({ label: L('p_' + _cz), type: 'checkbox', checked: ui.shown[_cz] !== false, click: () => send('mod:' + _cz) })),
         { type: 'separator' },
         { label: L('lock'), type: 'checkbox', checked: !!ui.locked, click: () => send('lock') },
         { label: L('resetLayout'), click: () => send('reset') },
@@ -597,7 +604,7 @@ function buildMenu() {
       role: 'help',
       label: L('help'),
       submenu: [
-        ...(isMac ? [] : [_ci, _cj, { type: 'separator' }]),
+        ...(isMac ? [] : [_cr, _cs, { type: 'separator' }]),
         { label: L('guide'), accelerator: 'F1', click: () => send('guide') },
         { label: L('cfg7100'), click: () => send('guide:ic7100') },
         { label: L('cfg7300'), click: () => send('guide:ic7300') },
@@ -609,7 +616,7 @@ function buildMenu() {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(_cl));
+  Menu.setApplicationMenu(Menu.buildFromTemplate(_cu));
 }
 app.whenReady().then(async () => {
   mainLog('avviata', app.getVersion() + ' · ' + process.platform);
@@ -619,7 +626,7 @@ app.whenReady().then(async () => {
   openWindow();
   app.on('activate', openWindow);
   if (isMac) {
-    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_cr) { /* si può concedere dopo */ }
+    try { systemPreferences.askForMediaAccess('microphone').catch(() => {}); } catch (_cA) { /* si può concedere dopo */ }
   }
 });
 app.on('window-all-closed', () => app.quit());
