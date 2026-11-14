@@ -1,9 +1,9 @@
 {
-  "web": "1.12.28",
+  "web": "1.12.29",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.28.html",
-  "size": 783103,
-  "sha256": "518bdd13bbe09f92eefa7d81eac558df62bac5d3febb2657f872dc158bd880e3",
-  "date": "2026-11-14 07:12 UTC",
-  "notes": "Stampo: a fine visita il motore cerca il nominativo dello spot nell'audio anche se non è stato letto; prova a confronto chiusa"
+  "file": "cwiu1mvi-1.12.29.html",
+  "size": 784675,
+  "sha256": "ef86f453448b7999afc97d81857180eae7c032dfdd2c99d2aa1ec61537f4ee4d",
+  "date": "2026-11-14 09:17 UTC",
+  "notes": "Misura dei candidati da spottare (solo diario, nessuno spot inviato)"
 }
