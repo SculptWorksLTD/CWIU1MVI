@@ -1,9 +1,9 @@
 {
-  "web": "1.12.30",
+  "web": "1.12.31",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.30.html",
-  "size": 841932,
-  "sha256": "1b75b6fa078d44ecb7c74d23f027d90708e3541217b9d431f3c4431cca03ef10",
-  "date": "2026-11-14 14:17 UTC",
-  "notes": "Scheda Skimmer: chiavetta RTL-SDR sulle fette CW (serve l'app 1.2.18)"
+  "file": "cwiu1mvi-1.12.31.html",
+  "size": 845607,
+  "sha256": "dc90310fdf89a21c553ac8c3eff38c4ff03dbda27c6a2376d469070bd5bf1fe4",
+  "date": "2026-11-14 14:25 UTC",
+  "notes": "Skimmer: avvio automatico, ripresa da solo, ritagli audio per migliorare il motore"
 }
