@@ -4653,7 +4653,7 @@ function k7Frame(_ao){
 }
 </script>
 <script>
-const WEB_VERSION="1.12.31";
+const WEB_VERSION="1.12.32";
 const APP=window.cwiuApp||null;
 const ZONES=["top","left","right","bottom"];
 const DEFAULT_LAYOUT={zones:{top:[],left:["log","qlog","tune"],right:["rig","c7100","hq","prop"],bottom:[]},min:[],split:0.64,locked:false};
@@ -6616,10 +6616,11 @@ async function skStart2(_l){if(!navigator.usb){msg(T("Skimmer: questa versione d
     let _m=(await navigator.usb.getDevices()).find(_n=>_n.vendorId===0x0bda);
     if(!_m&&_l)return;
     if(!_m)_m=await navigator.usb.requestDevice({filters:[{vendorId:0x0bda,productId:0x2838},{vendorId:0x0bda,productId:0x2832}]});
-    SKR.dev=_m;SKR.rtl=await RTL.RTL2832U.open(_m);
+    SKR.dev=_m;if(!_m.opened)await _m.open();if(!_m.configuration)await _m.selectConfiguration(1);
+    SKR.rtl=await RTL.RTL2832U.open(_m);
     await SKR.rtl.setSampleRate(SKR.fs);await SKR.rtl.setFrequencyCorrection(0);await SKR.rtl.setGain(null);
     try{await SKR.rtl.enableBiasTee(false)}catch(_o){}
-  }catch(_p){if(!_l)msg(T("Skimmer: chiavetta SDR non trovata o non utilizzabile ({0}).",String(_p&&_p.message||_p).slice(0,80)),true);evLog("skimmer errore",String(_p&&_p.message||_p));try{if(SKR.rtl)await SKR.rtl.close()}catch(_q){}SKR.rtl=null;return}
+  }catch(_p){if(!_l)msg(T("Skimmer: chiavetta SDR non trovata o non utilizzabile ({0}).",String(_p&&_p.message||_p).slice(0,80)),true);evLog("skimmer errore",String(_p&&_p.message||_p));try{if(SKR.rtl)await SKR.rtl.close();else if(SKR.dev&&SKR.dev.opened)await SKR.dev.close()}catch(_q){}SKR.rtl=null;return}
   SKR.on=true;SKR.idx=0;$("skBtn").textContent=T("Ferma skimmer");$("skBtn").classList.add("live");
   await skTune(SKR.bands[0]||"40");evLog("skimmer avviato",SKR.bands.join(",")+(_l?" (automatico)":""));skLoop()}
 async function skLoop(){const _r=SKR.rtl;

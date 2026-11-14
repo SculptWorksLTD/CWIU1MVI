@@ -1,9 +1,9 @@
 {
-  "web": "1.12.31",
+  "web": "1.12.32",
   "minShell": "1.1.0",
-  "file": "cwiu1mvi-1.12.31.html",
-  "size": 845607,
-  "sha256": "dc90310fdf89a21c553ac8c3eff38c4ff03dbda27c6a2376d469070bd5bf1fe4",
-  "date": "2026-11-14 14:25 UTC",
-  "notes": "Skimmer: avvio automatico, ripresa da solo, ritagli audio per migliorare il motore"
+  "file": "cwiu1mvi-1.12.32.html",
+  "size": 845749,
+  "sha256": "0e652a13e6f698425336fa92d7dbda17cd867d88e623df771f9ffc495e317b0e",
+  "date": "2026-11-14 14:37 UTC",
+  "notes": "Skimmer: apre la chiavetta prima di usarla (correzione)"
 }
